@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string translatable="false" name="help_url">https://github.com/AshiVered/QinBoard-T9/</string>
+	<string translatable="false" name="help_url">https://github.com/YairDaniel11/QinBoard-T9/</string>
 	<string name="app_name">QinBoard T9</string>
 	<string name="ime_name">QinBoard T9</string>
 	<string name="ime_number">מספרים</string>
@@ -38,7 +38,7 @@
 	<string name="updating_database_unavailable">מעדכן את מסד הנתונים של המילון, הקלדת מילים אינה זמינה בשלב זה.</string>
 
 	<string name="pref_lang_title">תמיכה רב לשונית…</string>
-	<string name="pref_github">"Github</string>
+	<string name="pref_github">Github</string>
 	<string name="pref_loaddict">טעינת מילון</string>
 	<string name="pref_loaduserdict">טעינת מילון משתמש</string>
     <string name="pref_nukedict">מחיקת מילון</string>

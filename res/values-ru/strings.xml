@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="help_url" translatable="false">https://github.com/AshiVered/QinBoard-T9/</string>
+    <string name="help_url" translatable="false">https://github.com/YairDaniel11/QinBoard-T9/</string>
     <string name="app_name">QinBoard T9</string>
     <string name="ime_name">QinBoard T9</string>
     <string name="ime_number">Числа</string>

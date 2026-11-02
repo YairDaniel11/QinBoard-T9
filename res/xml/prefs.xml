@@ -21,8 +21,8 @@
 	<Setting title="@string/pref_nukedict" id="nukedict"/>
 	<Setting title="@string/pref_backupdict" id="backupdict"/>
 	<Setting title="@string/pref_restoredict" id="restoredict"/>
-	<Setting title="@string/pref_github" id="github"/>
 	<Setting title="@string/pref_candidate_theme" id="pref_candidate_theme"/>
 	<Setting title="@string/pref_candidate_font" id="pref_candidate_font"/>
 	<Setting title="@string/pref_star_mode" id="pref_star_mode"/>
+	<Setting title="@string/pref_github" id="github"/>
 </Settings>

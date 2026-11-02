@@ -218,13 +218,46 @@ public class TraditionalT9Settings extends ListActivity implements
 			}
 		}
 
+		// number of words (lines) in the built-in dictionaries, or -1 if unknown
+		private long countWords() {
+			long n = 0;
+			byte[] buf = new byte[65536];
+			for (String dict : dicts) {
+				InputStream in = null;
+				try {
+					in = getAssets().open(dict);
+					int r;
+					while ((r = in.read(buf)) > 0) {
+						for (int i = 0; i < r; i++) {
+							if (buf[i] == '\n') {
+								n++;
+							}
+						}
+					}
+				} catch (IOException e) {
+					return -1;
+				} finally {
+					if (in != null) {
+						try { in.close(); } catch (IOException ignored) { }
+					}
+				}
+			}
+			return n;
+		}
+
 		@Override protected void onPreExecute() {
 			size = getDictSizes(internal, restore, dicts);
 			pos = 0;
 			if ( size >= 0 ) {
 				pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-				pd.setMax(10000);
-				pd.setProgressNumberFormat(null); // hide the internal "x/10000" counter
+				long words = (internal && !restore) ? countWords() : -1;
+				if (words > 0 && words < Integer.MAX_VALUE) {
+					// the counter shows "loaded words / total words"
+					pd.setMax((int) words);
+				} else {
+					pd.setMax(10000);
+					pd.setProgressNumberFormat(null); // no meaningful counter, the percent is enough
+				}
 			} else {
 				pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 			}
@@ -496,7 +529,7 @@ public class TraditionalT9Settings extends ListActivity implements
 		@Override
 		protected void onProgressUpdate(Integer... progress) {
 			if (pd.isShowing()) {
-				pd.setProgress(progress[0]);
+				pd.setProgress((int) ((long) progress[0] * pd.getMax() / 10000));
 			}
 		}
 
