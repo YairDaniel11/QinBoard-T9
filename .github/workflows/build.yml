@@ -1,0 +1,75 @@
+# בונה APK על כל push ל-master ומפרסם אותו כ-Release.
+# אפשר גם להריץ ידנית מהטאב Actions (workflow_dispatch).
+# minSdk 19 (אנדרואיד 4.4) מוגדר ב-build.gradle - ה-CI רק מקמפל.
+# versionCode/versionName נלקחים אוטומטית ממספר הריצה, בלי עריכה ידנית.
+
+name: Build APK
+
+on:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('build.gradle', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set version from run number
+        run: |
+          VERSION_NAME="7.${{ github.run_number }}"
+          sed -i "s/versionCode [0-9]\+/versionCode ${{ github.run_number }}/" build.gradle
+          sed -i "s/versionName '[^']*'/versionName '${VERSION_NAME}'/" build.gradle
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          grep -E "versionCode|versionName|applicationId" build.gradle
+
+      - name: Build debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --stacktrace --console=plain
+
+      - name: Rename APK
+        run: |
+          mkdir -p renamed-apk
+          APK=$(ls build/outputs/apk/debug/*.apk | head -1)
+          cp "$APK" "renamed-apk/QinBoard-T9-v${VERSION_NAME}.apk"
+          ls -la renamed-apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: QinBoard-T9-v${{ env.VERSION_NAME }}
+          path: renamed-apk/*.apk
+
+      - name: Create GitHub Release with APK
+        if: github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION_NAME }}
+          name: "QinBoard T9 v${{ env.VERSION_NAME }}"
+          body: |
+            בנייה אוטומטית מ-commit ${{ github.sha }}.
+            מינימום אנדרואיד 4.4. החבילה: aiv.ashivered.qinboard.t9.hebrow
+          files: renamed-apk/*.apk

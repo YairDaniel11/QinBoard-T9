@@ -52,6 +52,21 @@
     <string name="pref_mode_notify_subtitle">Used for vocalization of mode changes</string>
 
     <string name="pref_loadingdict">Loading dictionary…</string>
+    <string name="pref_candidate_theme">Suggestions theme</string>
+    <string name="pref_candidate_font">Suggestions font size</string>
+    <string-array name="pref_candidate_font_entries">
+    	<item>Small</item>
+    	<item>Normal (default)</item>
+    	<item>Large</item>
+    	<item>Extra large</item>
+    </string-array>
+    <string-array name="pref_candidate_theme_entries">
+    	<item>Classic (white)</item>
+    	<item>Gray and blue</item>
+    	<item>Gold and black</item>
+    </string-array>
+    <string name="pref_dict_update_title">Dictionary update</string>
+    <string name="pref_dict_update_msg">The built-in dictionary has changed. Load it now? Loading may take a few minutes.</string>
     <string name="pref_loadinguserdict">Loading user dictionary…</string>
     <string name="pref_load_title">Load IME dictionary</string>
     <string name="pref_loadingbackup">Restoring dictionary…</string>
@@ -93,4 +108,5 @@
     <string name="numbers">Numbers</string>
     <string name="dictionary">Dictionary</string>
 
+	<string name="word_added">Word \"%1$s\" added</string>
 </resources>

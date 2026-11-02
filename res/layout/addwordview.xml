@@ -1,41 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
 	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:orientation="vertical" >
+	android:layout_height="wrap_content"
+	android:background="@color/qb_bg"
+	android:orientation="vertical">
+
+	<TextView
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="@color/qb_header"
+		android:gravity="center"
+		android:minHeight="44dp"
+		android:text="@string/add_word"
+		android:textColor="@color/qb_header_text"
+		android:textSize="20sp"
+		android:textStyle="bold" />
 
 	<EditText
 		android:id="@+id/add_word_text"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
+		android:layout_margin="12dp"
+		android:background="@drawable/qb_input_bg"
 		android:inputType="text"
-		android:privateImeOptions="org.nyanya.android.traditionalt9.addword=true" >
+		android:padding="10dp"
+		android:privateImeOptions="org.nyanya.android.traditionalt9.addword=true"
+		android:textColor="@color/qb_text"
+		android:textSize="24sp">
 
 		<requestFocus />
 	</EditText>
 
-	<RelativeLayout
+	<LinearLayout
 		android:layout_width="match_parent"
-		android:layout_height="wrap_content" >
+		android:layout_height="wrap_content"
+		android:layout_marginBottom="12dp"
+		android:layout_marginLeft="12dp"
+		android:layout_marginRight="12dp"
+		android:orientation="horizontal">
 
 		<Button
 			android:id="@+id/add_word_add"
-			android:layout_width="wrap_content"
+			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			android:layout_alignParentLeft="true"
-			android:layout_alignParentTop="true"
+			android:layout_marginRight="6dp"
+			android:layout_weight="1"
+			android:background="@drawable/qb_btn_primary"
 			android:onClick="addWordButton"
-			android:text="@string/add_word" />
+			android:text="@string/add_word"
+			android:textColor="@color/qb_header_text"
+			android:textStyle="bold" />
 
 		<Button
 			android:id="@+id/add_word_cancel"
-			android:layout_width="wrap_content"
+			android:layout_width="0dp"
 			android:layout_height="wrap_content"
-			android:layout_alignParentRight="true"
-			android:layout_alignParentTop="true"
+			android:layout_marginLeft="6dp"
+			android:layout_weight="1"
+			android:background="@drawable/qb_btn_secondary"
 			android:onClick="cancelButton"
-			android:text="@android:string/cancel" />
-
-	</RelativeLayout>
+			android:text="@android:string/cancel"
+			android:textColor="@color/qb_text" />
+	</LinearLayout>
 
 </LinearLayout>

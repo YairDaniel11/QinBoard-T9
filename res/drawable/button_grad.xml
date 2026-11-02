@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
 android:shape="rectangle">
-	<!--  Gradient Bg for button -->
+	<!--  Bg for button -->
 	<gradient
-		android:startColor="#181C18"
-		android:endColor="#6B6D6B"
+		android:startColor="@color/qb_bar_dark"
+		android:endColor="@color/qb_bar_mid"
 		android:angle="90" />
 </shape>

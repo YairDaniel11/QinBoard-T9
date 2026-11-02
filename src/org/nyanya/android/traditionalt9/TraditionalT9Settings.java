@@ -505,6 +505,9 @@ public class TraditionalT9Settings extends ListActivity implements
 				finishAndShowError(pd, result, R.string.pref_restore_title);
 			} else {
 				finishAndShowError(pd, result, R.string.pref_load_title);
+				if (internal && result != null && result.status) {
+					saveLoadedDictSignature(mSupportedLanguages);
+				}
 			}
 		}
 	}
@@ -710,6 +713,67 @@ public class TraditionalT9Settings extends ListActivity implements
 		setListAdapter(settingitems);
 		mContext = this;
 
+		if (savedInstanceState == null) {
+			checkDictUpdate();
+		}
+	}
+
+	private static final String DICT_PREFS = "dict_state";
+	private static final String DICT_SIG_KEY = "loaded_signature";
+
+	// חתימה של המילונים המובנים לשפות הנתמכות: גדלי הקבצים מתוך dict.properties.
+	// משתנה רק כשתוכן מילון משתנה (או כשנוספה שפה), ולא בכל גרסה חדשה של האפליקציה.
+	private String computeDictSignature(LANGUAGE[] langs) {
+		InputStream input = null;
+		try {
+			Properties props = new Properties();
+			input = getAssets().open("dict.properties");
+			props.load(input);
+			StringBuilder sb = new StringBuilder();
+			for (LANGUAGE lang : langs) {
+				String name = String.format(dictname, lang.name().toLowerCase(Locale.ENGLISH));
+				sb.append(name).append('=').append(props.getProperty("size." + name)).append(';');
+			}
+			return sb.toString();
+		} catch (IOException e) {
+			Log.e("computeDictSignature", "Unable to read dict.properties");
+			return null;
+		} finally {
+			if (input != null) {
+				try { input.close(); } catch (IOException ignored) { }
+			}
+		}
+	}
+
+	private void saveLoadedDictSignature(LANGUAGE[] langs) {
+		String sig = computeDictSignature(langs);
+		if (sig != null) {
+			getSharedPreferences(DICT_PREFS, MODE_PRIVATE).edit().putString(DICT_SIG_KEY, sig).apply();
+		}
+	}
+
+	// אם המילון המובנה שונה ממה שנטען בפועל (התקנה ראשונה, עדכון מילון, או שפה חדשה) - מציעים לטעון.
+	private void checkDictUpdate() {
+		T9DB t9db = T9DB.getInstance(this);
+		if (!t9db.checkReady()) {
+			return;
+		}
+		final LANGUAGE[] langs = LangHelper.buildLangs(t9db.getSettingInt(SETTING.LANG_SUPPORT));
+		String sig = computeDictSignature(langs);
+		if (sig == null || sig.equals(getSharedPreferences(DICT_PREFS, MODE_PRIVATE).getString(DICT_SIG_KEY, null))) {
+			return;
+		}
+		new AlertDialog.Builder(this)
+				.setTitle(R.string.pref_dict_update_title)
+				.setMessage(R.string.pref_dict_update_msg)
+				.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int id) {
+						preloader(R.string.pref_loadingdict, true, false);
+					}
+				})
+				.setNegativeButton(android.R.string.cancel, null)
+				.show();
 	}
 
 	@Override
@@ -719,6 +783,10 @@ public class TraditionalT9Settings extends ListActivity implements
 			openGithub();
 		else if (s.id.equals("keyboard_Manger"))
 			MangeKey();
+		else if (s.id.equals("pref_candidate_theme"))
+			chooseCandidateTheme();
+		else if (s.id.equals("pref_candidate_font"))
+			chooseCandidateFont();
 		else if (s.id.equals("loaddict"))
 			preloader(R.string.pref_loadingdict, true, false);
 		else if (s.id.equals("loaduserdict"))
@@ -754,6 +822,36 @@ public class TraditionalT9Settings extends ListActivity implements
 		}
 		else
 			s.clicked(mContext);
+	}
+
+	private void chooseCandidateFont() {
+		new AlertDialog.Builder(this)
+				.setTitle(R.string.pref_candidate_font)
+				.setSingleChoiceItems(R.array.pref_candidate_font_entries, CandidateTheme.getFontIndex(this),
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								CandidateTheme.setFontIndex(TraditionalT9Settings.this, which);
+								dialog.dismiss();
+							}
+						})
+				.setNegativeButton(android.R.string.cancel, null)
+				.show();
+	}
+
+	private void chooseCandidateTheme() {
+		new AlertDialog.Builder(this)
+				.setTitle(R.string.pref_candidate_theme)
+				.setSingleChoiceItems(R.array.pref_candidate_theme_entries, CandidateTheme.get(this),
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								CandidateTheme.set(TraditionalT9Settings.this, which);
+								dialog.dismiss();
+							}
+						})
+				.setNegativeButton(android.R.string.cancel, null)
+				.show();
 	}
 
 	private void openGithub() {

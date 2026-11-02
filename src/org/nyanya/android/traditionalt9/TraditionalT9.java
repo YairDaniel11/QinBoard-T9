@@ -262,6 +262,9 @@ public class TraditionalT9 extends InputMethodService implements
 	public void onStartInput(EditorInfo attribute, boolean restarting) {
 		super.onStartInput(attribute, restarting);
 		currentInputConnection = getCurrentInputConnection();
+		if (mCandidateView != null) {
+			mCandidateView.applyTheme(this);
+		}
 		//Log.d("T9.onStartInput", "INPUTTYPE: " + attribute.inputType + " FIELDID: " + attribute.fieldId +
 		//	" FIELDNAME: " + attribute.fieldName + " PACKAGE NAME: " + attribute.packageName);
 		if (attribute.inputType == 0 || attribute.inputType == 3) {
@@ -946,14 +949,7 @@ public class TraditionalT9 extends InputMethodService implements
 		} else if (keyCode == KeyEvent.KEYCODE_BACK) {
 			handleClose();
 		} else if (keyCode == KeyEvent.KEYCODE_POUND) {
-			if (mKeyMode != MODE_NUM) {
-				if (mLangsAvailable.length > 1) {
-					nextLang();
-				} else {
-					showSmileyPage(); // TODO: replace with lang select if lang thing
-				}
-			//	return false;
-			}
+			cycleLangAndNumbers();
 		} else if (keyCode == KeyEvent.KEYCODE_SOFT_LEFT) {
 			if (mWordFound) {
 				showSymbolPage();
@@ -1439,6 +1435,36 @@ public class TraditionalT9 extends InputMethodService implements
 		modeNotification.show();
 		modeNotification.cancel(); 	// TODO: This will not always hide the Toast.
 		// will probably need to implement custom view
+	}
+
+	/**
+	 * Short press on '#': cycles through the enabled languages (e.g. Hebrew, English)
+	 * and then numbers, and back to the first language.
+	 */
+	private void cycleLangAndNumbers() {
+		if (mLangsAvailable == null || mLangsAvailable.length == 0) {
+			return;
+		}
+		if (mKeyMode == MODE_NUM) {
+			// numbers -> first language (predictive mode)
+			mKeyMode = MODE_LANG;
+			mLangIndex = 0;
+			mLang = mLangsAvailable[0];
+			updateKeyMode();
+			resetKeyMode();
+			Toast.makeText(this, getResources().getStringArray(R.array.pref_lang_titles)[mLang.index],
+					Toast.LENGTH_SHORT).show();
+		} else if (mLangIndex < mLangsAvailable.length - 1) {
+			nextLang();
+			Toast.makeText(this, getResources().getStringArray(R.array.pref_lang_titles)[mLang.index],
+					Toast.LENGTH_SHORT).show();
+		} else {
+			// last language -> numbers
+			mKeyMode = MODE_NUM;
+			updateKeyMode();
+			resetKeyMode();
+			Toast.makeText(this, R.string.numbers, Toast.LENGTH_SHORT).show();
+		}
 	}
 
 	private void nextLang() {

@@ -51,7 +51,8 @@
         <activity
             android:name=".TraditionalT9Settings"
             android:exported="true"
-            android:label="@string/traditionalt9_settings">
+            android:label="@string/traditionalt9_settings"
+            android:theme="@style/Theme.QinBoard">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -62,7 +63,7 @@
             android:name=".AddWordAct"
             android:excludeFromRecents="true"
             android:label="@string/title_activity_add_word"
-            android:theme="@android:style/Theme.Dialog" />
+            android:theme="@style/Theme.QinBoard.Dialog" />
     </application>
 
 </manifest>

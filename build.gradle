@@ -112,11 +112,18 @@ android {
         targetSdk 33
         versionCode 7
         versionName '7'
-        applicationId 'aiv.ashivered.qinboard.t9'
+        applicationId 'aiv.ashivered.qinboard.t9.hebrow'
     }
 
 	// http://stackoverflow.com/a/19130098
 	signingConfigs {
+		// מפתח קבוע גם ל-debug, כדי שעדכונים בין בניות יותקנו מעל הקודמת
+		debug {
+			storeFile file("debug.keystore")
+			storePassword "android"
+			keyAlias "androiddebugkey"
+			keyPassword "android"
+		}
 		release {
        			storeFile file("my-release-key.keystore")
        			storePassword "STOREPASS"

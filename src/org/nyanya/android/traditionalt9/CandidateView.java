@@ -3,6 +3,7 @@ package org.nyanya.android.traditionalt9;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -34,6 +35,12 @@ public class CandidateView extends View {
 	private int mColorRecommended;
 	private int mColorOther;
 	private int mColorAdd;
+	private int mColorBackground;
+	private int mColorSelectedText;
+	private int mColorHighlight;
+	private boolean mCustomHighlight;
+	private float mBaseTextSize;
+	private boolean mResetScroll;
 	private int mVerticalPadding;
 	private Paint mPaint;
 	private int mTargetScrollX;
@@ -65,21 +72,70 @@ public class CandidateView extends View {
 		mColorRecommended = r.getColor(R.color.candidate_recommended);
 		mColorOther = r.getColor(R.color.candidate_other);
 		mColorAdd=r.getColor(R.color.candidate_background_add);
+		mColorBackground = r.getColor(R.color.candidate_background);
+		mColorSelectedText = mColorRecommended;
+		mCustomHighlight = false;
 
 		mVerticalPadding = r.getDimensionPixelSize(R.dimen.candidate_vertical_padding);
 
 		mPaint = new Paint();
 		mPaint.setColor(mColorNormal);
 		mPaint.setAntiAlias(true);
-		mPaint.setTextSize(r.getDimensionPixelSize(R.dimen.candidate_font_height));
+		mBaseTextSize = r.getDimensionPixelSize(R.dimen.candidate_font_height);
+		mPaint.setTextSize(mBaseTextSize);
 		mPaint.setStrokeWidth(0);
 
 		mPadding = new Rect();
+
+		applyTheme(context);
 
 		setHorizontalFadingEdgeEnabled(true);
 		setWillNotDraw(false);
 		setHorizontalScrollBarEnabled(false);
 		setVerticalScrollBarEnabled(false);
+	}
+
+	/**
+	 * Applies the colour theme chosen in the settings (see CandidateTheme).
+	 */
+	public void applyTheme(Context context) {
+		Resources r = context.getResources();
+		switch (CandidateTheme.get(context)) {
+			case CandidateTheme.GRAY_BLUE:
+				mColorBackground = Color.parseColor("#5A595A");
+				mColorNormal = Color.parseColor("#FFFFFF");
+				mColorOther = Color.parseColor("#CECBCE");
+				mColorSelectedText = Color.parseColor("#000000");
+				mColorHighlight = Color.parseColor("#00BAD6");
+				mColorAdd = Color.parseColor("#4FD8EA");
+				mCustomHighlight = true;
+				break;
+			case CandidateTheme.GOLD_BLACK:
+				mColorBackground = Color.parseColor("#181C21");
+				mColorNormal = Color.parseColor("#FFFFFF");
+				mColorOther = Color.parseColor("#C6C7C6");
+				mColorSelectedText = Color.parseColor("#000000");
+				mColorHighlight = Color.parseColor("#FFD700");
+				mColorAdd = Color.parseColor("#FFD700");
+				mCustomHighlight = true;
+				break;
+			default:
+				mColorBackground = r.getColor(R.color.candidate_background);
+				mColorNormal = r.getColor(R.color.candidate_normal);
+				mColorOther = r.getColor(R.color.candidate_other);
+				mColorSelectedText = r.getColor(R.color.candidate_recommended);
+				mColorAdd = r.getColor(R.color.candidate_background_add);
+				mCustomHighlight = false;
+				break;
+		}
+		setBackgroundColor(mColorBackground);
+		mBgPadding = null;
+		float newSize = mBaseTextSize * CandidateTheme.getFontScale(context);
+		if (newSize != mPaint.getTextSize()) {
+			mPaint.setTextSize(newSize);
+			requestLayout();
+		}
+		invalidate();
 	}
 
 	@Override
@@ -120,47 +176,59 @@ public class CandidateView extends View {
 				getBackground().getPadding(mBgPadding);
 			}
 		}
-		int x = 0;
 		final int count = mSuggestions.size();
 		final int height = getHeight();
 		final Rect bgPadding = mBgPadding;
 		final Paint paint = mPaint;
 		final int y = (int) (((height - mPaint.getTextSize()) / 2) - mPaint.ascent());
 
+		// first pass: measure (logical order, first suggestion = x 0)
+		int x = 0;
 		for (int i = 0; i < count; i++) {
-			String suggestion = mSuggestions.get(i);
-			float textWidth = paint.measureText(suggestion);
-			final int wordWidth = (int) textWidth + X_GAP * 2;
-
+			final int wordWidth = (int) paint.measureText(mSuggestions.get(i)) + X_GAP * 2;
 			mWordX[i] = x;
 			mWordWidth[i] = wordWidth;
-			paint.setColor(mColorNormal);
-			// if (touchX + scrollX >= x && touchX + scrollX < x + wordWidth &&
-			// !scrolled) {
-			if (i == mSelectedIndex) {
-				canvas.translate(x, 0);
-				mSelectionHighlight.setBounds(0, bgPadding.top, wordWidth, height);
-				mSelectionHighlight.draw(canvas);
-				canvas.translate(-x, 0);
-				paint.setFakeBoldText(true);
-				paint.setColor(mColorRecommended);
-			} else {
-				paint.setColor(mColorOther);
-			}
-			if (i==count-1)
-				paint.setColor(mColorAdd);
-
-			canvas.drawText(suggestion, x + X_GAP, y, paint);
-			paint.setColor(mColorOther);
-			canvas.drawLine(x + wordWidth + 0.5f, bgPadding.top, x + wordWidth + 0.5f, height + 1,
-				paint);
-			paint.setFakeBoldText(false);
-
 			x += wordWidth;
 		}
-
-
 		mTotalWidth = x;
+		// right-to-left layout: the first suggestion is pinned to the right edge
+		// and the following ones go to the left
+		final int contentWidth = Math.max(mTotalWidth, getWidth());
+		if (mResetScroll) {
+			mResetScroll = false;
+			mTargetScrollX = scrollTargetFor(mSelectedIndex < 0 ? 0 : mSelectedIndex, contentWidth);
+			scrollTo(mTargetScrollX, getScrollY());
+		}
+
+		for (int i = 0; i < count; i++) {
+			String suggestion = mSuggestions.get(i);
+			final int wordWidth = mWordWidth[i];
+			final int left = contentWidth - mWordX[i] - wordWidth;
+			paint.setColor(mColorNormal);
+			if (i == mSelectedIndex) {
+				if (mCustomHighlight) {
+					paint.setColor(mColorHighlight);
+					canvas.drawRect(left, bgPadding.top, left + wordWidth, height, paint);
+				} else {
+					canvas.translate(left, 0);
+					mSelectionHighlight.setBounds(0, bgPadding.top, wordWidth, height);
+					mSelectionHighlight.draw(canvas);
+					canvas.translate(-left, 0);
+				}
+				paint.setFakeBoldText(true);
+				paint.setColor(mColorSelectedText);
+			} else {
+				paint.setColor(mCustomHighlight ? mColorNormal : mColorOther);
+			}
+			if (i==count-1 && !(mCustomHighlight && i == mSelectedIndex))
+				paint.setColor(mColorAdd);
+
+			canvas.drawText(suggestion, left + X_GAP, y, paint);
+			paint.setColor(mColorOther);
+			canvas.drawLine(left + 0.5f, bgPadding.top, left + 0.5f, height + 1, paint);
+			paint.setFakeBoldText(false);
+		}
+
 		if (mTargetScrollX != getScrollX()) {
 			scrollToTarget();
 		}
@@ -185,6 +253,20 @@ public class CandidateView extends View {
 		invalidate();
 	}
 
+	/** Scroll position that centres the given word in the right-to-left layout. */
+	private int scrollTargetFor(int index, int contentWidth) {
+		final int fullsize = getWidth();
+		final int left = contentWidth - mWordX[index] - mWordWidth[index];
+		int target = left + (mWordWidth[index] / 2) - fullsize / 2;
+		final int max = Math.max(0, contentWidth - fullsize);
+		if (target < 0) {
+			target = 0;
+		} else if (target > max) {
+			target = max;
+		}
+		return target;
+	}
+
 	protected void setSuggestions(List<String> suggestions, int initialSel) {
 		clear();
 		if (suggestions != null) {
@@ -195,6 +277,7 @@ public class CandidateView extends View {
 		}
 		scrollTo(0, 0);
 		mTargetScrollX = 0;
+		mResetScroll = true;
 		// Compute the total width
 		// onDraw(null);
 		invalidate();
@@ -216,14 +299,7 @@ public class CandidateView extends View {
 				mSelectedIndex = mSuggestions.size() - 1;
 			}
 
-			int fullsize = getWidth();
-			int halfsize = fullsize / 2;
-			mTargetScrollX = mWordX[mSelectedIndex] + (mWordWidth[mSelectedIndex] / 2) - halfsize;
-			if (mTargetScrollX < 0) {
-				mTargetScrollX = 0;
-			} else if (mTargetScrollX > (mTotalWidth - fullsize)) {
-				mTargetScrollX = mTotalWidth - fullsize;
-			}
+			mTargetScrollX = scrollTargetFor(mSelectedIndex, Math.max(mTotalWidth, getWidth()));
 
 			invalidate();
 		}

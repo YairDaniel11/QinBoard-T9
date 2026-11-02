@@ -51,6 +51,21 @@
 	<string name="pref_mode_notify_subtitle">משמש להקצאת שינויים במצב</string>
 
 	<string name="pref_loadingdict">טוען מילון...</string>
+	<string name="pref_candidate_theme">ערכת נושא להצעות</string>
+	<string name="pref_candidate_font">גודל פונט ההצעות</string>
+	<string-array name="pref_candidate_font_entries">
+		<item>קטן</item>
+		<item>רגיל (ברירת מחדל)</item>
+		<item>גדול</item>
+		<item>גדול מאוד</item>
+	</string-array>
+	<string-array name="pref_candidate_theme_entries">
+		<item>קלאסי (לבן)</item>
+		<item>אפור וכחול</item>
+		<item>זהב ושחור</item>
+	</string-array>
+	<string name="pref_dict_update_title">עדכון מילון</string>
+	<string name="pref_dict_update_msg">המילון המובנה השתנה. לטעון אותו עכשיו? הטעינה עלולה להימשך כמה דקות.</string>
 	<string name="pref_loadinguserdict">טוען מילון משתמש...</string>
 	<string name="pref_load_title">טוען מילון</string>
 	<string name="pref_loadingbackup">משחזר מילון...</string>
@@ -94,4 +109,5 @@
 	<string name="dictionary">חיזוי</string>
 
 
+	<string name="word_added">המילה \"%1$s\" נוספה</string>
 </resources>

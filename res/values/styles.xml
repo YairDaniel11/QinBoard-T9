@@ -17,6 +17,28 @@
 		<!-- All customizations that are NOT specific to a particular API-level can go here. -->
 	</style>
 
+	<!-- Dark gray window with cyan header -->
+	<style name="Theme.QinBoard" parent="@style/Theme.AppCompat.NoActionBar">
+		<item name="android:windowBackground">@color/qb_bg</item>
+		<item name="android:textColorPrimary">@color/qb_text</item>
+		<item name="android:textColorSecondary">@color/qb_text_secondary</item>
+		<item name="android:listSelector">@drawable/qb_list_selector</item>
+		<item name="android:alertDialogTheme">@style/QinBoardAlertDialog</item>
+		<item name="colorPrimary">@color/qb_header</item>
+		<item name="colorPrimaryDark">@color/qb_header</item>
+		<item name="colorAccent">@color/qb_header</item>
+	</style>
+
+	<style name="QinBoardAlertDialog" parent="@android:style/Theme.DeviceDefault.Dialog.Alert" />
+
+	<style name="Theme.QinBoard.Dialog" parent="@style/Theme.AppCompat.Dialog">
+		<item name="android:windowNoTitle">true</item>
+		<item name="android:windowBackground">@color/qb_bg</item>
+		<item name="android:textColorPrimary">@color/qb_text</item>
+		<item name="android:textColorSecondary">@color/qb_text_secondary</item>
+		<item name="colorAccent">@color/qb_header</item>
+	</style>
+
 	<style name="SymbolStyle" parent="android:Widget.TextView">
 		<item name="android:layout_weight">1</item>
 		<item name="android:layout_width">0dp</item>

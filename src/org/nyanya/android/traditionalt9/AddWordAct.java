@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import org.nyanya.android.traditionalt9.T9DB.DBSettings.SETTING;
 
@@ -48,6 +49,8 @@ public class AddWordAct extends Activity {
 		T9DB db = T9DB.getInstance(this);
 		try {
 			db.addWord(text, LangHelper.LANGUAGE.get(lang));
+			Toast.makeText(getApplicationContext(), getString(R.string.word_added, text),
+					Toast.LENGTH_SHORT).show();
 		} catch (DBException e) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			String msg = e.getMessage();
