@@ -27,5 +27,6 @@
 		android:divider="@color/qb_divider"
 		android:dividerHeight="1dp"
 		android:drawSelectorOnTop="false"
+		android:listSelector="@drawable/qb_list_selector"
 		android:scrollbarAlwaysDrawVerticalTrack="true" />
 </LinearLayout>

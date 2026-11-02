@@ -506,7 +506,7 @@ public class TraditionalT9Settings extends ListActivity implements
 			} else {
 				finishAndShowError(pd, result, R.string.pref_load_title);
 				if (internal && result != null && result.status) {
-					saveLoadedDictSignature(mSupportedLanguages);
+					DictState.markLoaded(TraditionalT9Settings.this, mSupportedLanguages);
 				}
 			}
 		}
@@ -698,6 +698,8 @@ public class TraditionalT9Settings extends ListActivity implements
 		// maybe need this?
 		// http://stackoverflow.com/questions/7645880/listview-with-onitemclicklistener-android
 
+		LangHelper.migrateDefaultLangs(this);
+
 		// get settings
 		Object[] settings = T9DB.getInstance(this).getSettings(new SETTING[]
 				// Order should be based on SETTING.sqOrder
@@ -713,65 +715,74 @@ public class TraditionalT9Settings extends ListActivity implements
 		setListAdapter(settingitems);
 		mContext = this;
 
-		if (savedInstanceState == null) {
-			checkDictUpdate();
-		}
 	}
 
-	private static final String DICT_PREFS = "dict_state";
-	private static final String DICT_SIG_KEY = "loaded_signature";
+	private boolean mDictPromptShowing = false;
+	private int mDeclinedLangMask = -1;
 
-	// חתימה של המילונים המובנים לשפות הנתמכות: גדלי הקבצים מתוך dict.properties.
-	// משתנה רק כשתוכן מילון משתנה (או כשנוספה שפה), ולא בכל גרסה חדשה של האפליקציה.
-	private String computeDictSignature(LANGUAGE[] langs) {
-		InputStream input = null;
-		try {
-			Properties props = new Properties();
-			input = getAssets().open("dict.properties");
-			props.load(input);
-			StringBuilder sb = new StringBuilder();
-			for (LANGUAGE lang : langs) {
-				String name = String.format(dictname, lang.name().toLowerCase(Locale.ENGLISH));
-				sb.append(name).append('=').append(props.getProperty("size." + name)).append(';');
-			}
-			return sb.toString();
-		} catch (IOException e) {
-			Log.e("computeDictSignature", "Unable to read dict.properties");
-			return null;
-		} finally {
-			if (input != null) {
-				try { input.close(); } catch (IOException ignored) { }
-			}
-		}
-	}
-
-	private void saveLoadedDictSignature(LANGUAGE[] langs) {
-		String sig = computeDictSignature(langs);
-		if (sig != null) {
-			getSharedPreferences(DICT_PREFS, MODE_PRIVATE).edit().putString(DICT_SIG_KEY, sig).apply();
-		}
-	}
-
-	// אם המילון המובנה שונה ממה שנטען בפועל (התקנה ראשונה, עדכון מילון, או שפה חדשה) - מציעים לטעון.
+	// Offer to load the dictionaries when a supported language has no (or an outdated) loaded dictionary:
+	// first run, an updated dictionary, or a newly enabled language.
 	private void checkDictUpdate() {
+		if (mDictPromptShowing || task != null && task.getStatus() == AsyncTask.Status.RUNNING) {
+			return;
+		}
 		T9DB t9db = T9DB.getInstance(this);
 		if (!t9db.checkReady()) {
 			return;
 		}
-		final LANGUAGE[] langs = LangHelper.buildLangs(t9db.getSettingInt(SETTING.LANG_SUPPORT));
-		String sig = computeDictSignature(langs);
-		if (sig == null || sig.equals(getSharedPreferences(DICT_PREFS, MODE_PRIVATE).getString(DICT_SIG_KEY, null))) {
+		final int langMask = t9db.getSettingInt(SETTING.LANG_SUPPORT);
+		final LANGUAGE[] langs = LangHelper.buildLangs(langMask);
+		if (DictState.allLoaded(this, langs) || langMask == mDeclinedLangMask) {
 			return;
 		}
+		mDictPromptShowing = true;
 		new AlertDialog.Builder(this)
 				.setTitle(R.string.pref_dict_update_title)
 				.setMessage(R.string.pref_dict_update_msg)
 				.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialog, int id) {
+						mDictPromptShowing = false;
 						preloader(R.string.pref_loadingdict, true, false);
 					}
 				})
+				.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int id) {
+						mDictPromptShowing = false;
+						mDeclinedLangMask = langMask;
+					}
+				})
+				.setOnCancelListener(new DialogInterface.OnCancelListener() {
+					@Override
+					public void onCancel(DialogInterface dialog) {
+						mDictPromptShowing = false;
+						mDeclinedLangMask = langMask;
+					}
+				})
+				.show();
+	}
+
+	// also re-check after dialogs (e.g. changing the supported languages) close
+	@Override
+	public void onWindowFocusChanged(boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		if (hasFocus && mContext != null) {
+			checkDictUpdate();
+		}
+	}
+
+	private void chooseStarMode() {
+		new AlertDialog.Builder(this)
+				.setTitle(R.string.pref_star_mode)
+				.setSingleChoiceItems(R.array.pref_star_mode_entries, InputPrefs.isStarDouble(this) ? 1 : 0,
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								InputPrefs.setStarDouble(TraditionalT9Settings.this, which == 1);
+								dialog.dismiss();
+							}
+						})
 				.setNegativeButton(android.R.string.cancel, null)
 				.show();
 	}
@@ -787,6 +798,8 @@ public class TraditionalT9Settings extends ListActivity implements
 			chooseCandidateTheme();
 		else if (s.id.equals("pref_candidate_font"))
 			chooseCandidateFont();
+		else if (s.id.equals("pref_star_mode"))
+			chooseStarMode();
 		else if (s.id.equals("loaddict"))
 			preloader(R.string.pref_loadingdict, true, false);
 		else if (s.id.equals("loaduserdict"))

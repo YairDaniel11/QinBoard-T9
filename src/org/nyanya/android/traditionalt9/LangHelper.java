@@ -32,7 +32,7 @@ public class LangHelper {
 
 	protected static final Locale[] LOCALES = {Locale.ENGLISH, RUSSIAN, Locale.GERMAN, Locale.FRENCH, Locale.ITALIAN, UKRAINIAN, HEBREW, YIDISH, ARABIC, VIETNAMESE};
 
-	public static final int LANG_DEFAULT = LANGUAGE.EN.id;
+	public static final int LANG_DEFAULT = LANGUAGE.HE.id | LANGUAGE.EN.id;
 
 	protected static final int NLANGS = LANGUAGE.lookup.size();
 
@@ -112,6 +112,26 @@ public class LangHelper {
 				},
 	    };
 
+	/**
+	 * One-time migration for installs created before Hebrew became a default language:
+	 * if only English is enabled, enable Hebrew + English and start in Hebrew.
+	 */
+	public static void migrateDefaultLangs(android.content.Context context) {
+		android.content.SharedPreferences sp = context.getSharedPreferences("ui_prefs", android.content.Context.MODE_PRIVATE);
+		if (sp.getBoolean("lang_default_migrated", false)) {
+			return;
+		}
+		T9DB db = T9DB.getInstance(context);
+		if (!db.checkReady()) {
+			return;
+		}
+		if (db.getSettingInt(T9DB.DBSettings.SETTING.LANG_SUPPORT) == LANGUAGE.EN.id) {
+			db.storeSettingInt(T9DB.DBSettings.SETTING.LANG_SUPPORT, LANG_DEFAULT);
+			db.storeSettingInt(T9DB.DBSettings.SETTING.LAST_LANG, LANGUAGE.HE.id);
+		}
+		sp.edit().putBoolean("lang_default_migrated", true).apply();
+	}
+
 	public static LANGUAGE[] buildLangs(int i) {
 		int num = 0;
 		//calc size of filtered array
@@ -122,8 +142,13 @@ public class LangHelper {
 		}
 		LANGUAGE[] la = new LANGUAGE[num];
 		int lai = 0;
+		// Hebrew first, so '#' cycles Hebrew, English, ..., numbers
+		if ((i & LANGUAGE.HE.id) == LANGUAGE.HE.id) {
+			la[lai] = LANGUAGE.HE;
+			lai++;
+		}
 		for (LANGUAGE l : LANGUAGE.ids) {
-			if ((i & l.id) == l.id) {
+			if (l != LANGUAGE.HE && (i & l.id) == l.id) {
 				la[lai] = l;
 				lai++;
 			}

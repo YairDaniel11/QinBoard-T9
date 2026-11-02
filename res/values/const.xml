@@ -18,5 +18,5 @@
 	<integer name="INPUT_NUM">2</integer>
 
 	<integer name="INPUT_DEFAULT">@integer/INPUT_DICT</integer>
-	<integer name="LANG_DEFAULT">@integer/LANG_EN</integer>
+	<integer name="LANG_DEFAULT">65</integer>
 </resources>

@@ -54,6 +54,12 @@
     <string name="pref_loadingdict">Loading dictionary…</string>
     <string name="pref_candidate_theme">Suggestions theme</string>
     <string name="pref_candidate_font">Suggestions font size</string>
+    <string name="pref_star_mode">Star key - special characters</string>
+    <string-array name="pref_star_mode_entries">
+    	<item>Long press opens special characters (default)</item>
+    	<item>Double press opens special characters (disables long press)</item>
+    </string-array>
+    <string name="dict_not_loaded">The dictionary is not loaded. Open the settings and load the dictionary.</string>
     <string-array name="pref_candidate_font_entries">
     	<item>Small</item>
     	<item>Normal (default)</item>
@@ -99,7 +105,7 @@
     <string name="dev_info" translatable="false">QinBoard T9 by A.I.V V5.0</string>
     <string name="prev">previous</string>
     <string name="next">next</string>
-    <string name="keyboard_Manger">Setup</string>
+    <string name="keyboard_Manger">Keyboard setup</string>
     <string name="help">help.txt</string>
     <string name="manual">Manual</string>
     <string name="keyboard_settings">Enable Qinboard T9 as input method</string>
@@ -109,4 +115,7 @@
     <string name="dictionary">Dictionary</string>
 
 	<string name="word_added">Word \"%1$s\" added</string>
+	<string name="keyboard_status_enable">Step 1: enable QinBoard T9 in the list of input methods.</string>
+	<string name="keyboard_status_default">Step 2: choose QinBoard T9 as the keyboard used for typing.</string>
+	<string name="keyboard_status_done">QinBoard T9 is set as the default keyboard.</string>
 </resources>

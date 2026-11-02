@@ -53,6 +53,12 @@
 	<string name="pref_loadingdict">טוען מילון...</string>
 	<string name="pref_candidate_theme">ערכת נושא להצעות</string>
 	<string name="pref_candidate_font">גודל פונט ההצעות</string>
+	<string name="pref_star_mode">כוכבית - פתיחת סימנים מיוחדים</string>
+	<string-array name="pref_star_mode_entries">
+		<item>לחיצה ארוכה פותחת סימנים מיוחדים (ברירת מחדל)</item>
+		<item>לחיצה כפולה פותחת סימנים מיוחדים (מבטל לחיצה ארוכה)</item>
+	</string-array>
+	<string name="dict_not_loaded">המילון לא נטען. פתח את ההגדרות ואשר טעינת מילון</string>
 	<string-array name="pref_candidate_font_entries">
 		<item>קטן</item>
 		<item>רגיל (ברירת מחדל)</item>
@@ -97,7 +103,7 @@
     <string name="dev_info">QinBoard T9 by A.I.V V5.0</string>
 	<string name="prev">הקודם</string>
 	<string name="next">הבא</string>
-    <string name="keyboard_Manger">הגדרה</string>
+    <string name="keyboard_Manger">הגדרת מקלדת</string>
     <string name="about">אודות</string>
     <string name="pref_loaduserdictdesc">אחסון מקומי/QinBoardT9/user.lang.dict (lang: en/ru/de/fr/it/uk/he)</string>
 	<string name="help">help_iw.txt</string>
@@ -110,4 +116,7 @@
 
 
 	<string name="word_added">המילה \"%1$s\" נוספה</string>
+	<string name="keyboard_status_enable">שלב 1: הפעל את QinBoard T9 ברשימת שיטות הקלט.</string>
+	<string name="keyboard_status_default">שלב 2: בחר ב-QinBoard T9 כמקלדת הראשית להקלדה.</string>
+	<string name="keyboard_status_done">✓ QinBoard T9 מוגדרת כמקלדת ברירת המחדל.</string>
 </resources>

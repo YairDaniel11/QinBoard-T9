@@ -1,18 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:background="@color/qb_bg"
+	android:orientation="vertical">
 
-    <Button
-        android:id="@+id/keyboard_settings_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/keyboard_settings" />
+	<TextView
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="@color/qb_header"
+		android:gravity="center"
+		android:minHeight="44dp"
+		android:text="@string/ime_name"
+		android:textColor="@color/qb_header_text"
+		android:textSize="20sp"
+		android:textStyle="bold" />
 
-    <Button
-        android:id="@+id/input_method_settings_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/IME_default" />
+	<TextView
+		android:id="@+id/keyboard_status"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:padding="12dp"
+		android:textColor="@color/qb_text"
+		android:textSize="16sp" />
+
+	<Button
+		android:id="@+id/keyboard_settings_button"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginBottom="8dp"
+		android:layout_marginLeft="12dp"
+		android:layout_marginRight="12dp"
+		android:background="@drawable/qb_btn_primary"
+		android:text="@string/keyboard_settings"
+		android:textColor="@color/qb_header_text"
+		android:textStyle="bold" />
+
+	<Button
+		android:id="@+id/input_method_settings_button"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_marginBottom="12dp"
+		android:layout_marginLeft="12dp"
+		android:layout_marginRight="12dp"
+		android:background="@drawable/qb_btn_secondary"
+		android:text="@string/IME_default"
+		android:textColor="@color/qb_text" />
 
 </LinearLayout>

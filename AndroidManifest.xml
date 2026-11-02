@@ -22,12 +22,14 @@
 
     <application
         android:allowBackup="false"
+        android:supportsRtl="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/ime_name"
         android:theme="@style/Theme.AppCompat.Light">
         <activity
             android:name=".KeyboardActivity"
             android:exported="true"
+            android:theme="@style/Theme.QinBoard.Dialog"
         />
         <activity
             android:name=".help"

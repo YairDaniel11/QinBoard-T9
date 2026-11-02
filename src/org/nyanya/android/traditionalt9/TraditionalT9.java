@@ -215,7 +215,7 @@ public class TraditionalT9 extends InputMethodService implements
 	}
 
 	protected void showAddWord() {
-		if (mKeyMode == MODE_LANG) {
+		if (mKeyMode != MODE_NUM) {
 			// decide if we are going to look for work to base on
 			String template = mComposing.toString();
 			if (template.length() == 0) {
@@ -262,6 +262,7 @@ public class TraditionalT9 extends InputMethodService implements
 	public void onStartInput(EditorInfo attribute, boolean restarting) {
 		super.onStartInput(attribute, restarting);
 		currentInputConnection = getCurrentInputConnection();
+		LangHelper.migrateDefaultLangs(this);
 		if (mCandidateView != null) {
 			mCandidateView.applyTheme(this);
 		}
@@ -722,7 +723,10 @@ public class TraditionalT9 extends InputMethodService implements
 			}
 			return true;
 		} else if (keyCode == KeyEvent.KEYCODE_STAR) {
-			showSmileyPage();
+			// with "double press" mode on, long press is free for other uses
+			if (!InputPrefs.isStarDouble(this)) {
+				showSmileyPage();
+			}
 
 		}	else if (keyCode == KeyEvent.KEYCODE_SOFT_RIGHT) {
 			if (interfacehandler != null) {
@@ -943,6 +947,8 @@ public class TraditionalT9 extends InputMethodService implements
 				handleCharacter(KeyEvent.KEYCODE_STAR);
 			} else if (mLang.id == LANGUAGE.VI.id && mComposing.length() > 0) {
 				handleCharacter(keyCode);
+			} else if (InputPrefs.isStarDouble(this)) {
+				handleStarMaybeDouble();
 			} else {
 				handleShift();
 			}
@@ -1000,8 +1006,14 @@ public class TraditionalT9 extends InputMethodService implements
 						commitTyped();
 					break;
 				case MODE_TEXT:
-					commitTyped();
-					charReset();
+					if (noSoftButtons && isAddWordOptionSelected()) {
+						commitTyped();
+						charReset();
+						showAddWord();
+					} else {
+						commitTyped();
+						charReset();
+					}
 					break;
 				case MODE_NUM:
 					// shouldn't happen
@@ -1072,6 +1084,10 @@ public class TraditionalT9 extends InputMethodService implements
 						interfacehandler.showScrollKeys(true);
 					}
 				} else {
+					if (!mDictHintShown && !DictState.isLoaded(this, mLang)) {
+						mDictHintShown = true;
+						Toast.makeText(this, R.string.dict_not_loaded, Toast.LENGTH_LONG).show();
+					}
 					mWordFound = false;
 					mComposingI.setLength(len - 1);
 					setCandidatesViewShown(false);
@@ -1182,6 +1198,28 @@ public class TraditionalT9 extends InputMethodService implements
 		// Log.d("handleBS", "Cm: " + mCapsMode);
 		// Why do I need to call this twice, android...
 		updateShiftKeyState(getCurrentInputEditorInfo());
+	}
+
+	private boolean mStarPending = false;
+	private final Handler mStarHandler = new Handler();
+	private final Runnable mStarRunnable = new Runnable() {
+		@Override
+		public void run() {
+			mStarPending = false;
+			handleShift();
+		}
+	};
+
+	// single '*' toggles the case (after a short wait), double '*' opens the special characters window
+	private void handleStarMaybeDouble() {
+		if (mStarPending) {
+			mStarHandler.removeCallbacks(mStarRunnable);
+			mStarPending = false;
+			showSmileyPage();
+		} else {
+			mStarPending = true;
+			mStarHandler.postDelayed(mStarRunnable, 350);
+		}
 	}
 
 	private void handleShift() {
@@ -1360,13 +1398,13 @@ public class TraditionalT9 extends InputMethodService implements
 				return super.onKeyUp(keyCode, event);
 			} else {
 				if (mKeyMode != MODE_NUM && mComposing.length() > 0) {
-					if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+					if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
 						mCandidateView.scrollSuggestion(1);
 
 						if (!(noSoftButtons && isAddWordOptionSelected())&&mSuggestionStrings.size() > mCandidateView.mSelectedIndex)
 							currentInputConnection.setComposingText(mSuggestionStrings.get(mCandidateView.mSelectedIndex), 1);
 						return true;
-					} else if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+					} else if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
 						mCandidateView.scrollSuggestion(-1);
 
 						if (!(noSoftButtons && isAddWordOptionSelected())&&mSuggestionStrings.size() > mCandidateView.mSelectedIndex )
@@ -1441,29 +1479,39 @@ public class TraditionalT9 extends InputMethodService implements
 	 * Short press on '#': cycles through the enabled languages (e.g. Hebrew, English)
 	 * and then numbers, and back to the first language.
 	 */
+	private int mModeBeforeNum = MODE_LANG;
+	private boolean mDictHintShown = false;
+
 	private void cycleLangAndNumbers() {
 		if (mLangsAvailable == null || mLangsAvailable.length == 0) {
 			return;
 		}
 		if (mKeyMode == MODE_NUM) {
-			// numbers -> first language (predictive mode)
-			mKeyMode = MODE_LANG;
+			// numbers -> first language, in the mode used before the numbers
+			mKeyMode = mModeBeforeNum;
 			mLangIndex = 0;
 			mLang = mLangsAvailable[0];
+			clearComposingQuick();
 			updateKeyMode();
-			resetKeyMode();
-			Toast.makeText(this, getResources().getStringArray(R.array.pref_lang_titles)[mLang.index],
-					Toast.LENGTH_SHORT).show();
 		} else if (mLangIndex < mLangsAvailable.length - 1) {
 			nextLang();
-			Toast.makeText(this, getResources().getStringArray(R.array.pref_lang_titles)[mLang.index],
-					Toast.LENGTH_SHORT).show();
 		} else {
 			// last language -> numbers
+			mModeBeforeNum = mKeyMode;
+			clearComposingQuick();
 			mKeyMode = MODE_NUM;
 			updateKeyMode();
-			resetKeyMode();
-			Toast.makeText(this, R.string.numbers, Toast.LENGTH_SHORT).show();
+		}
+	}
+
+	// like resetKeyMode, but does the (slow) commit/candidate refresh only if there is text being composed
+	private void clearComposingQuick() {
+		charReset();
+		if (mComposing.length() > 0 || mComposingI.length() > 0) {
+			commitTyped();
+			mComposing.setLength(0);
+			mComposingI.setLength(0);
+			currentInputConnection.finishComposingText();
 		}
 	}
 
@@ -1545,20 +1593,15 @@ public class TraditionalT9 extends InputMethodService implements
 			// text, we would commit one of them here. But for this sample,
 			// we will just commit the current text.
 			if (!mSuggestionStrings.isEmpty()) {
-				if (index < 0) {
-					// Log.d("pickSuggestMan", "picking SELECTED: " +
-					// mSuggestionStrings.get(mCandidateView.mSelectedIndex));
-					// get and commit selected suggestion
-					ic.commitText(mSuggestionStrings.get(mCandidateView.mSelectedIndex), 1);
-					if (mKeyMode == MODE_LANG) {
+				final int sel = (index < 0) ? mCandidateView.mSelectedIndex : index;
+				if (noSoftButtons && sel == mSuggestionStrings.size() - 1) {
+					// this is the "Add" item, never type its label
+					ic.finishComposingText();
+				} else if (sel >= 0 && sel < mSuggestionStrings.size()) {
+					ic.commitText(mSuggestionStrings.get(sel), 1);
+					if (mKeyMode == MODE_LANG && sel < mSuggestionInts.size()) {
 						// update freq
-						db.incrementWord(mSuggestionInts.get(mCandidateView.mSelectedIndex));
-					}
-				} else {
-					// commit suggestion index
-					ic.commitText(mSuggestionStrings.get(index), 1);
-					if (mKeyMode == MODE_LANG) {
-						db.incrementWord(mSuggestionInts.get(index));
+						db.incrementWord(mSuggestionInts.get(sel));
 					}
 				}
 			}
