@@ -263,6 +263,7 @@ public class TraditionalT9 extends InputMethodService implements
 		super.onStartInput(attribute, restarting);
 		currentInputConnection = getCurrentInputConnection();
 		LangHelper.migrateDefaultLangs(this);
+		LangHelper.migrateDefaultInputMode(this);
 		if (mCandidateView != null) {
 			mCandidateView.applyTheme(this);
 		}

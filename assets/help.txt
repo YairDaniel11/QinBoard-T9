@@ -1,45 +1,61 @@
- -------
+-------
 |setup|
- -------
+-------
 
 1. Enable QinBoard T9 as an input method
 2. Set QinBoard T9 as default input method
-3. choose languages, and select default mode (dictionary, text ,number).
-4. if you select “dictionary”, you need to choose “Load dictionary” to use.
+3. choose languages, and select default mode (dictionary, text ,number). The default is Hebrew and English, in dictionary mode.
+4. On the first run of the settings (and after changing languages or updating a dictionary) you are offered to load the dictionary. Accept it and wait until it finishes. Dictionary mode does not work without a loaded dictionary.
 5. now, you can to start typing! (but, some functions are aviable only after reboot.).
- -----------
+-----------
 |Hotkeys|
- -----------
+-----------
 DPAD LEFT:
-Scroll suggestions left
+Next suggestion (suggestions are shown right to left, the first one is pinned to the right)
 
 DPAD RIGHT:
-Scroll suggestions right
+Previous suggestion
 
 Star (*):
 Short press: switch mode (uppercase and lowercase letters).
 Long press: add symbol or smiley.
+In the settings ("Star key - special characters") you can choose double press instead: a single press switches case once, a double press opens the symbols window, and long press is disabled.
 in Vietnamese lang:
 Special Characters.
 e.g.:
 
-    (a) + (*) = (á)
+    (a) + (*) = (a)
 
 
 Hash/Pound (#):
-Short press: change lang (if more than one language is selected).
+Short press: cycle Hebrew, English, numbers, and back to Hebrew (according to the selected languages).
 Long press  (not working in Qin1S+) : new line.
 
 Call key:
 Change input modes (dictionary, text, numbers)
 
- -----------
+Add word:
+Choosing "Add" in the suggestions opens the add word window. A short message is shown after the word is added.
+
+-----------
+|more settings|
+-----------
+
+* Suggestions theme: classic (white), gray and blue, gold and black
+* Suggestions font size: small, normal (default), large, extra large
+* Star key - special characters: long press or double press
+
+-----------
 |app info|
- -----------
+-----------
 
 QinBoard T9 V7
 developed by A.I.V
 
 WHAT'S NEW?
-* Add Vietnamese
-* Change action of call key
+* Larger Hebrew dictionary, ranked by frequency
+* Suggestions shown right to left
+* Three suggestion themes and font size setting
+* # cycles Hebrew, English and numbers
+* Optional double press on star for special characters
+* Message after adding a word, redesigned windows

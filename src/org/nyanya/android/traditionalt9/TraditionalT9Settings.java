@@ -224,6 +224,7 @@ public class TraditionalT9Settings extends ListActivity implements
 			if ( size >= 0 ) {
 				pd.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 				pd.setMax(10000);
+				pd.setProgressNumberFormat(null); // hide the internal "x/10000" counter
 			} else {
 				pd.setProgressStyle(ProgressDialog.STYLE_SPINNER);
 			}
@@ -699,6 +700,7 @@ public class TraditionalT9Settings extends ListActivity implements
 		// http://stackoverflow.com/questions/7645880/listview-with-onitemclicklistener-android
 
 		LangHelper.migrateDefaultLangs(this);
+		LangHelper.migrateDefaultInputMode(this);
 
 		// get settings
 		Object[] settings = T9DB.getInstance(this).getSettings(new SETTING[]

@@ -132,6 +132,25 @@ public class LangHelper {
 		sp.edit().putBoolean("lang_default_migrated", true).apply();
 	}
 
+	/**
+	 * One-time migration: the database used to start in "text" mode (no prediction). The default is now
+	 * predictive ("dictionary") mode.
+	 */
+	public static void migrateDefaultInputMode(android.content.Context context) {
+		android.content.SharedPreferences sp = context.getSharedPreferences("ui_prefs", android.content.Context.MODE_PRIVATE);
+		if (sp.getBoolean("input_default_migrated", false)) {
+			return;
+		}
+		T9DB db = T9DB.getInstance(context);
+		if (!db.checkReady()) {
+			return;
+		}
+		if (db.getSettingInt(T9DB.DBSettings.SETTING.INPUT_MODE) == 1) {
+			db.storeSettingInt(T9DB.DBSettings.SETTING.INPUT_MODE, 0);
+		}
+		sp.edit().putBoolean("input_default_migrated", true).apply();
+	}
+
 	public static LANGUAGE[] buildLangs(int i) {
 		int num = 0;
 		//calc size of filtered array
