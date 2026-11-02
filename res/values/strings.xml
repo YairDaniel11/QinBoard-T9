@@ -118,4 +118,5 @@
 	<string name="keyboard_status_enable">Step 1: enable QinBoard T9 in the list of input methods.</string>
 	<string name="keyboard_status_default">Step 2: choose QinBoard T9 as the keyboard used for typing.</string>
 	<string name="keyboard_status_done">QinBoard T9 is set as the default keyboard.</string>
+	<string name="add_word_button">Add</string>
 </resources>

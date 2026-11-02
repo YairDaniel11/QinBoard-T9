@@ -20,8 +20,10 @@
 		android:id="@+id/keyboard_status"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
+		android:gravity="start"
 		android:padding="12dp"
 		android:textColor="@color/qb_text"
+		android:textDirection="locale"
 		android:textSize="16sp" />
 
 	<Button

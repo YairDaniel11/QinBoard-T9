@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
@@ -36,6 +37,9 @@ public class AddWordAct extends Activity {
 		et.setSelection(origword.length());
 		setContentView(v);
 		main = v;
+		// wide window, almost the full width of the screen
+		int width = (int) (getResources().getDisplayMetrics().widthPixels * 0.95f);
+		getWindow().setLayout(width, WindowManager.LayoutParams.WRAP_CONTENT);
 	}
 
 	public void addWordButton(View v) {

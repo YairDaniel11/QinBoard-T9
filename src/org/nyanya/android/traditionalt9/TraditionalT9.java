@@ -1423,6 +1423,12 @@ public class TraditionalT9 extends InputMethodService implements
 					}
 				}
 				if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+					if (!mAddingWord && mComposing.length() == 0 && mComposingI.length() == 0
+							&& mDPADkeyEvent != null && currentInputConnection != null) {
+						// nothing typed: let the app handle OK (e.g. to switch navigation modes)
+						currentInputConnection.sendKeyEvent(mDPADkeyEvent);
+						return super.onKeyUp(keyCode, event);
+					}
 					handleMidButton();
 					return true;
 				} else {// Send stored event to input connection then pass current

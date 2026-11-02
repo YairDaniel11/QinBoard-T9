@@ -33,6 +33,8 @@
 
 	<style name="Theme.QinBoard.Dialog" parent="@style/Theme.AppCompat.Dialog">
 		<item name="android:windowNoTitle">true</item>
+		<item name="android:windowMinWidthMajor">95%</item>
+		<item name="android:windowMinWidthMinor">95%</item>
 		<item name="android:windowBackground">@color/qb_bg</item>
 		<item name="android:textColorPrimary">@color/qb_text</item>
 		<item name="android:textColorSecondary">@color/qb_text_secondary</item>

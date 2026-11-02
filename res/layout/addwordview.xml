@@ -22,7 +22,9 @@
 		android:layout_height="wrap_content"
 		android:layout_margin="12dp"
 		android:background="@drawable/qb_input_bg"
+		android:gravity="start"
 		android:inputType="text"
+		android:textDirection="locale"
 		android:padding="10dp"
 		android:privateImeOptions="org.nyanya.android.traditionalt9.addword=true"
 		android:textColor="@color/qb_text"
@@ -47,7 +49,7 @@
 			android:layout_weight="1"
 			android:background="@drawable/qb_btn_primary"
 			android:onClick="addWordButton"
-			android:text="@string/add_word"
+			android:text="@string/add_word_button"
 			android:textColor="@color/qb_header_text"
 			android:textStyle="bold" />
 

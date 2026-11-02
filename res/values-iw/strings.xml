@@ -119,4 +119,5 @@
 	<string name="keyboard_status_enable">שלב 1: הפעל את QinBoard T9 ברשימת שיטות הקלט.</string>
 	<string name="keyboard_status_default">שלב 2: בחר ב-QinBoard T9 כמקלדת הראשית להקלדה.</string>
 	<string name="keyboard_status_done">✓ QinBoard T9 מוגדרת כמקלדת ברירת המחדל.</string>
+	<string name="add_word_button">הוסף</string>
 </resources>
