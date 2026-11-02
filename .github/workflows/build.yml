@@ -34,8 +34,9 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('build.gradle', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # ה-runner כולל Android SDK מותקן; רק מאשרים רישיונות כדי ש-AGP יוכל להוריד build-tools חסרים
+      - name: Accept Android SDK licenses
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
 
       - name: Set version from run number
         run: |
