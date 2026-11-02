@@ -58,6 +58,17 @@ jobs:
           cp "$APK" "renamed-apk/QinBoard-T9-v${VERSION_NAME}.apk"
           ls -la renamed-apk
 
+      # גרסה קלה: רק מילוני עברית ואנגלית (קטנה בהרבה, נוחה להעברה בבלוטוס).
+      # אותה חבילה ואותה חתימה כמו המלאה, כך שאפשר להתקין זו מעל זו.
+      - name: Build lite APK (Hebrew and English dictionaries only)
+        run: |
+          for l in ar de fr it ru uk vi yi; do rm -f "assets/${l}-utf8.txt"; done
+          rm -f assets/dict.properties
+          ./gradlew clean assembleDebug --no-daemon --stacktrace --console=plain
+          APK=$(ls build/outputs/apk/debug/*.apk | head -1)
+          cp "$APK" "renamed-apk/QinBoard-T9-lite-v${VERSION_NAME}.apk"
+          ls -la renamed-apk
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
@@ -73,4 +84,6 @@ jobs:
           body: |
             בנייה אוטומטית מ-commit ${{ github.sha }}.
             מינימום אנדרואיד 4.4. החבילה: aiv.ashivered.qinboard.t9.hebrow
+            QinBoard-T9-v*.apk: גרסה מלאה (כל השפות).
+            QinBoard-T9-lite-v*.apk: גרסה קלה, עברית ואנגלית בלבד.
           files: renamed-apk/*.apk
