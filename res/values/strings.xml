@@ -38,7 +38,7 @@
     <string name="updating_database_unavailable">Updating dictionary database, word input unavailable at this time.</string>
 
     <string name="pref_lang_title">Multilingual support…</string>
-    <string name="pref_github">Github</string>
+    <string name="pref_github">App GitHub repository</string>
     <string name="pref_loaddict">Load dictionary</string>
     <string name="pref_loaduserdict">Load user dictionary</string>
     <string name="pref_loaduserdictdesc">internal storage/QinBoardT9/user.lang.dict (lang: en/ru/de/fr/it/uk/he/yi/ar/vi)</string>

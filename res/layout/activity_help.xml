@@ -1,21 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:fillViewport="true">
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    tools:context=".help">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:background="@color/qb_bg"
+	android:orientation="vertical">
 
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        android:padding="12sp"
-        android:textStyle="bold" />
-</RelativeLayout>
-</ScrollView>
+	<TextView
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:background="@color/qb_header"
+		android:gravity="center"
+		android:minHeight="48dp"
+		android:singleLine="true"
+		android:text="@string/manual"
+		android:textColor="@color/qb_header_text"
+		android:textSize="20sp"
+		android:textStyle="bold" />
+
+	<ScrollView
+		android:layout_width="match_parent"
+		android:layout_height="0dp"
+		android:layout_weight="1"
+		android:fillViewport="true">
+
+		<TextView
+			android:id="@+id/textView"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:gravity="start"
+			android:lineSpacingExtra="4dp"
+			android:padding="14dp"
+			android:textColor="@color/qb_text"
+			android:textDirection="locale"
+			android:textSize="17sp" />
+	</ScrollView>
+</LinearLayout>

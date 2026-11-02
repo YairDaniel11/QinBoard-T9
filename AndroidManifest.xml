@@ -34,7 +34,7 @@
         <activity
             android:name=".help"
             android:exported="true"
-            android:theme="@style/Theme.AppCompat.Light" />
+            android:theme="@style/Theme.QinBoard" />
 
         <service
             android:name=".TraditionalT9"
