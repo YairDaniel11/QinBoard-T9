@@ -69,6 +69,9 @@ jobs:
           ./gradlew clean assembleDebug --no-daemon --stacktrace --console=plain
           APK=$(ls build/outputs/apk/debug/*.apk | head -1)
           cp "$APK" "renamed-apk/QinBoard-T9-lite-v${VERSION_NAME}.apk"
+          # fixed file names, so that .../releases/latest/download/<name> is a permanent link to the newest build
+          cp "renamed-apk/QinBoard-T9-v${VERSION_NAME}.apk" renamed-apk/QinBoard-T9.apk
+          cp "renamed-apk/QinBoard-T9-lite-v${VERSION_NAME}.apk" renamed-apk/QinBoard-T9-lite.apk
           ls -la renamed-apk
 
       - name: Upload APK
