@@ -1501,6 +1501,7 @@ public class TraditionalT9 extends InputMethodService implements
 			clearComposingQuick();
 			updateKeyMode();
 		} else if (mLangIndex < mLangsAvailable.length - 1) {
+			clearComposingQuick();
 			nextLang();
 		} else {
 			// last language -> numbers

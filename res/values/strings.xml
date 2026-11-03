@@ -56,8 +56,8 @@
     <string name="pref_candidate_font">Suggestions font size</string>
     <string name="pref_star_mode">Star key - special characters</string>
     <string-array name="pref_star_mode_entries">
-    	<item>Long press opens special characters (default)</item>
-    	<item>Double press opens special characters (disables long press)</item>
+    	<item>Long press (default)</item>
+    	<item>Double press (disables long press)</item>
     </string-array>
     <string name="dict_not_loaded">The dictionary is not loaded. Open the settings and load the dictionary.</string>
     <string-array name="pref_candidate_font_entries">

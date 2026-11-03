@@ -55,8 +55,8 @@
 	<string name="pref_candidate_font">גודל פונט ההצעות</string>
 	<string name="pref_star_mode">כוכבית - פתיחת סימנים מיוחדים</string>
 	<string-array name="pref_star_mode_entries">
-		<item>לחיצה ארוכה פותחת סימנים מיוחדים (ברירת מחדל)</item>
-		<item>לחיצה כפולה פותחת סימנים מיוחדים (מבטל לחיצה ארוכה)</item>
+		<item>לחיצה ארוכה (ברירת מחדל)</item>
+		<item>לחיצה כפולה (מבטלת ארוכה)</item>
 	</string-array>
 	<string name="dict_not_loaded">המילון לא נטען. פתח את ההגדרות ואשר טעינת מילון</string>
 	<string-array name="pref_candidate_font_entries">
