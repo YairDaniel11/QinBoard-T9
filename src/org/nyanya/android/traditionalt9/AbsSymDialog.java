@@ -20,7 +20,6 @@ public abstract class AbsSymDialog extends Dialog implements
 	private int pagenum = 1;
 	private int pageoffset = (pagenum - 1) * 10;
 
-	private int MAX_PAGE;
 	private boolean started;
 
 	private static final int[] buttons = {
@@ -50,7 +49,6 @@ public abstract class AbsSymDialog extends Dialog implements
 			button = mv.findViewById(butt);
 			button.setOnClickListener(this);
 		}
-		MAX_PAGE = getMaxPage();
 	}
 
 	// must return a string array the same size as the length of the button string array.
@@ -105,11 +103,27 @@ public abstract class AbsSymDialog extends Dialog implements
 	protected abstract int getSymbolSize();
 	protected abstract int getMaxPage();
 
+	// hooks for subclasses
+	protected void onSymbolChosen(String symbol) { }
+	// called for the arrow keys; return true when the key was used (e.g. to switch screen)
+	protected boolean onSwitchKey() { return false; }
+
+	protected void resetPage() {
+		pagenum = 1;
+		pageoffset = 0;
+	}
+
+	protected void refreshButtons() {
+		updateButtons();
+	}
+
 	private void sendChar(int index) {
 		// Log.d("SymbolDialog - sendChar", "Sending index: " + index);
 
 		if (index < getSymbolSize()) {
-			((KeyboardView.OnKeyboardActionListener) context).onText(getSymbol(index));
+			String chosen = getSymbol(index);
+			onSymbolChosen(chosen);
+			((KeyboardView.OnKeyboardActionListener) context).onText(chosen);
 			// then close
 			pagenum = 1;
 			pageoffset = (pagenum - 1) * 10;
@@ -119,10 +133,10 @@ public abstract class AbsSymDialog extends Dialog implements
 
 	private void pageChange(int amt) {
 		pagenum = pagenum + amt;
-		if (pagenum > MAX_PAGE) {
+		if (pagenum > getMaxPage()) {
 			pagenum = 1;
 		} else if (pagenum < 1) {
-			pagenum = MAX_PAGE;
+			pagenum = getMaxPage();
 		}
 		pageoffset = (pagenum - 1) * 10;
 		updateButtons();
@@ -131,7 +145,7 @@ public abstract class AbsSymDialog extends Dialog implements
 	private void updateButtons() {
 		// set page number text
 		setTitle(String.format("%s\t\t%s", getTitleText(),
-				context.getResources().getString(R.string.symbol_page, pagenum, MAX_PAGE)));
+				context.getResources().getString(R.string.symbol_page, pagenum, getMaxPage())));
 		// update button labels
 		int symbx = pageoffset;
 		int stop = symbx + 9;
@@ -193,6 +207,11 @@ public abstract class AbsSymDialog extends Dialog implements
 			case KeyEvent.KEYCODE_STAR:
 				event.startTracking();
 				return true;
+			case KeyEvent.KEYCODE_DPAD_LEFT:
+			case KeyEvent.KEYCODE_DPAD_RIGHT:
+			case KeyEvent.KEYCODE_DPAD_UP:
+			case KeyEvent.KEYCODE_DPAD_DOWN:
+				return true;
 		}
 		return super.onKeyDown(keyCode, event);
 	}
@@ -229,6 +248,14 @@ public abstract class AbsSymDialog extends Dialog implements
 			case KeyEvent.KEYCODE_STAR:
 				onKey(keyCode);
 				return true;
+			case KeyEvent.KEYCODE_DPAD_LEFT:
+			case KeyEvent.KEYCODE_DPAD_RIGHT:
+			case KeyEvent.KEYCODE_DPAD_UP:
+			case KeyEvent.KEYCODE_DPAD_DOWN:
+				if (onSwitchKey()) {
+					return true;
+				}
+				break;
 			default:
 				// KeyCharacterMap.load(KeyCharacterMap.BUILT_IN_KEYBOARD).getNumber(keyCode)
 				// Log.w("onKeyUp", "Unhandled Key: " + keyCode + "(" +

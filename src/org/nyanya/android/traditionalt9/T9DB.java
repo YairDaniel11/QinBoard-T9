@@ -17,6 +17,9 @@ import android.widget.Toast;
 import org.nyanya.android.traditionalt9.LangHelper.LANGUAGE;
 
 import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -162,7 +165,7 @@ public class T9DB {
 
 	protected void setSQLDB(SQLiteDatabase tdb) {
 		synchronized (T9DB.class){
-			db = tdb;
+			db = tdb; userTableReady = false;
 			ready = true;
 		}
 	}
@@ -170,7 +173,7 @@ public class T9DB {
 	protected void close() {
 		try { db.close(); }
 		catch (NullPointerException ignored) { }
-		db = null;
+		db = null; userTableReady = false;
 	}
 
 	protected void nuke() {
@@ -183,7 +186,7 @@ public class T9DB {
 			Log.i("T9DB.nuke", "Preparing database...");
 			getWritableDatabase().close();
 
-			db = null;
+			db = null; userTableReady = false;
 			ready = true;
 			init();
 			if (oldSettings != null) {
@@ -342,6 +345,15 @@ public class T9DB {
 			Log.w("T9DB.addWord", msg);
 			throw new DBException(msg);
 		}
+		// a word added by the user shows up in third place until it is picked
+		try {
+			ensureUserTable();
+			db.execSQL("INSERT OR REPLACE INTO " + USER_TABLE + " (" + COLUMN_LANG + ", " + COLUMN_SEQ + ", " +
+					COLUMN_WORD + ", picks, lastpick, added) VALUES (?,?,?,0,0,1)",
+					new Object[] { lang.id, seq, iword });
+		} catch (RuntimeException e) {
+			Log.e("T9DB.addWord", "user ranking failed", e);
+		}
 	}
 
 	protected void incrementWord(int id) {
@@ -352,6 +364,124 @@ public class T9DB {
 		}
 		db.execSQL(UPDATEQ + id);
 		// if id's freq is greater than FREQ_MAX, it gets normalized with trigger
+		try {
+			recordPick(id);
+		} catch (RuntimeException e) {
+			Log.e("T9DB.incrementWord", "recordPick failed", e);
+		}
+	}
+
+	// ---------- user ranking ("learning") ----------
+	// Rules, per group of words that share the same key sequence:
+	//  * a word picked from the list jumps to first place;
+	//  * a word picked 3 times is pinned in first place, and is replaced only when another
+	//    word reaches 3 picks (the old one drops back to 1 pick);
+	//  * a word the user adds goes to third place until it is picked.
+	private static final String USER_TABLE = "userpick";
+	private static final int PIN_PICKS = 3;
+	private static final int NEW_WORD_INDEX = 2; // third place
+	private boolean userTableReady = false;
+
+	private void ensureUserTable() {
+		if (userTableReady) return;
+		db.execSQL("CREATE TABLE IF NOT EXISTS " + USER_TABLE + " (" +
+				COLUMN_LANG + " INTEGER, " + COLUMN_SEQ + " TEXT, " + COLUMN_WORD + " TEXT, " +
+				"picks INTEGER NOT NULL DEFAULT 0, lastpick INTEGER NOT NULL DEFAULT 0, " +
+				"added INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(" + COLUMN_LANG + ", " + COLUMN_WORD + "))");
+		db.execSQL("CREATE INDEX IF NOT EXISTS userpick_seq ON " + USER_TABLE + "(" +
+				COLUMN_LANG + ", " + COLUMN_SEQ + ")");
+		userTableReady = true;
+	}
+
+	private void recordPick(int id) {
+		Cursor c = db.rawQuery("SELECT " + COLUMN_LANG + ", " + COLUMN_SEQ + ", " + COLUMN_WORD +
+				" FROM " + WORD_TABLE_NAME + " WHERE " + COLUMN_ID + "=?", new String[] { String.valueOf(id) });
+		if (!c.moveToFirst()) {
+			c.close();
+			return;
+		}
+		int lang = c.getInt(0);
+		String seq = c.getString(1);
+		String word = c.getString(2);
+		c.close();
+		ensureUserTable();
+		db.execSQL("INSERT OR IGNORE INTO " + USER_TABLE + " (" + COLUMN_LANG + ", " + COLUMN_SEQ + ", " +
+				COLUMN_WORD + ", picks, lastpick, added) VALUES (?,?,?,0,0,0)", new Object[] { lang, seq, word });
+		db.execSQL("UPDATE " + USER_TABLE + " SET picks = MIN(picks + 1, " + PIN_PICKS + "), lastpick = ?, added = 0" +
+				" WHERE " + COLUMN_LANG + "=? AND " + COLUMN_WORD + "=?",
+				new Object[] { System.currentTimeMillis(), lang, word });
+		// reached the pin level: the previously pinned word of this sequence steps down
+		db.execSQL("UPDATE " + USER_TABLE + " SET picks = 1 WHERE " + COLUMN_LANG + "=? AND " + COLUMN_SEQ +
+				"=? AND " + COLUMN_WORD + "<>? AND picks >= " + PIN_PICKS,
+				new Object[] { lang, seq, word });
+	}
+
+	private static class RankEntry {
+		String word; Integer id; int picks; long last; boolean added;
+	}
+
+	private void applyUserRanking(String seq, LANGUAGE lang, AbstractList<String> words, List<Integer> ids) {
+		if (words.isEmpty() || words.size() != ids.size()) return;
+		ensureUserTable();
+		Cursor c = db.rawQuery("SELECT " + COLUMN_WORD + ", picks, lastpick, added FROM " + USER_TABLE +
+				" WHERE " + COLUMN_LANG + "=? AND " + COLUMN_SEQ + "=?",
+				new String[] { String.valueOf(lang.id), seq });
+		if (c.getCount() == 0) {
+			c.close();
+			return;
+		}
+		Map<String, RankEntry> info = new HashMap<String, RankEntry>();
+		for (c.moveToFirst(); !c.isAfterLast(); c.moveToNext()) {
+			RankEntry e = new RankEntry();
+			e.word = c.getString(0);
+			e.picks = c.getInt(1);
+			e.last = c.getLong(2);
+			e.added = c.getInt(3) == 1;
+			info.put(e.word, e);
+		}
+		c.close();
+
+		List<RankEntry> pinned = new ArrayList<RankEntry>();
+		List<RankEntry> picked = new ArrayList<RankEntry>();
+		List<RankEntry> fresh = new ArrayList<RankEntry>();
+		List<RankEntry> rest = new ArrayList<RankEntry>();
+		for (int i = 0; i < words.size(); i++) {
+			RankEntry e = info.get(words.get(i));
+			RankEntry item = new RankEntry();
+			item.word = words.get(i);
+			item.id = ids.get(i);
+			if (e == null) {
+				rest.add(item);
+				continue;
+			}
+			item.picks = e.picks;
+			item.last = e.last;
+			if (e.picks >= PIN_PICKS) pinned.add(item);
+			else if (e.picks > 0) picked.add(item);
+			else if (e.added) fresh.add(item);
+			else rest.add(item);
+		}
+		Comparator<RankEntry> recent = new Comparator<RankEntry>() {
+			@Override
+			public int compare(RankEntry a, RankEntry b) {
+				return a.last < b.last ? 1 : (a.last > b.last ? -1 : 0);
+			}
+		};
+		Collections.sort(pinned, recent);
+		Collections.sort(picked, recent);
+		List<RankEntry> ordered = new ArrayList<RankEntry>(words.size());
+		ordered.addAll(pinned);
+		ordered.addAll(picked);
+		ordered.addAll(rest);
+		for (int k = 0; k < fresh.size(); k++) {
+			ordered.add(Math.min(NEW_WORD_INDEX + k, ordered.size()), fresh.get(k));
+		}
+		words.clear();
+		ids.clear();
+		for (RankEntry e : ordered) {
+			words.add(e.word);
+			ids.add(e.id);
+		}
 	}
 
 	protected void updateWords(String is, AbstractList<String> stringList, List<Integer> intList,
@@ -376,6 +506,12 @@ public class T9DB {
 			hits++;
 		}
 		cur.close();
+
+		try {
+			applyUserRanking(is, lang, stringList, intList);
+		} catch (RuntimeException e) {
+			Log.e("T9DB.updateWords", "user ranking failed", e);
+		}
 
 		if ((hits < MINHITS) && (islen >= 2)) {
 			char c = is.charAt(islen - 1);

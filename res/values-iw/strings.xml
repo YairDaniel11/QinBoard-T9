@@ -17,8 +17,8 @@
 	<string name="ricon_desc">החזק את הסמל</string>
 	<string name="symbol_next">עמוד הבא</string>
 	<string name="symbol_prev">עמוד קודם</string>
-	<string name="symbol_insert">הוסף סמל</string>
-	<string name="smiley_insert">הוסף סמל</string>
+	<string name="symbol_insert">הוסף סימן</string>
+	<string name="smiley_insert">הוסף אייקון</string>
 	<string name="symbol_page">עמוד: %1$s/%2$s</string>
 
 	<string name="add_word">הוסף מילה</string>

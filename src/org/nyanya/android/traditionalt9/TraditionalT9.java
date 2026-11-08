@@ -58,8 +58,7 @@ public class TraditionalT9 extends InputMethodService implements
 
 	protected boolean mWordFound = true;
 
-	private AbsSymDialog mSymbolPopup = null;
-	private AbsSymDialog mSmileyPopup = null;
+	private SymbolDialog mSymbolPopup = null;
 	protected boolean mAddingWord = false;
 	// private boolean mAddingSkipInput = false;
 	private int mPrevious;
@@ -167,20 +166,21 @@ public class TraditionalT9 extends InputMethodService implements
 	protected CandidateView getCandidateView() {
 		return mCandidateView;
 	}
+	// one window, two screens (symbols / icons) - the arrow keys switch between them
 	protected void showSymbolPage() {
+		showSymbolWindow(false);
+	}
+
+	protected void showSmileyPage() {
+		showSymbolWindow(true);
+	}
+
+	private void showSymbolWindow(boolean icons) {
 		if (mSymbolPopup == null) {
 			mSymbolPopup = new SymbolDialog(this, getLayoutInflater().inflate(R.layout.symbolview,
 					null));
 		}
-		mSymbolPopup.doShow(getWindow().getWindow().getDecorView());
-	}
-
-	protected void showSmileyPage() {
-		if (mSmileyPopup == null) {
-			mSmileyPopup = new SmileyDialog(this, getLayoutInflater().inflate(R.layout.symbolview,
-					null));
-		}
-		mSmileyPopup.doShow(getWindow().getWindow().getDecorView());
+		mSymbolPopup.showScreen(getWindow().getWindow().getDecorView(), icons);
 	}
 
 	private void clearState() {
@@ -287,6 +287,10 @@ public class TraditionalT9 extends InputMethodService implements
 			return;
 		}
 		mFirstPress = true;
+		mBackDownHandled = false;
+		mZeroSpaceTime = 0;
+		mMultiLine = (attribute.inputType & InputType.TYPE_MASK_CLASS) == InputType.TYPE_CLASS_TEXT
+				&& (attribute.inputType & InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0;
 		mEditing = EDITING;
 		// Reset our state. We want to do this even if restarting, because
 		// the underlying state of the text editor could have changed in any
@@ -360,8 +364,8 @@ public class TraditionalT9 extends InputMethodService implements
 				}
 
 				if (variation == InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-						|| variation == InputType.TYPE_TEXT_VARIATION_URI
-						|| variation == InputType.TYPE_TEXT_VARIATION_FILTER) {
+						|| variation == InputType.TYPE_TEXT_VARIATION_URI) {
+						// (search/filter boxes keep the user's normal mode so they get suggestions)
 					// Our predictions are not useful for e-mail addresses
 					// or URIs.
 					mKeyMode = MODE_TEXT;
@@ -572,17 +576,24 @@ public class TraditionalT9 extends InputMethodService implements
 			// InputConnection ic = getCurrentInputConnection();
 			// if(ic.getTextBeforeCursor(1, 0).isNull) {
 			final InputConnection ic = getCurrentInputConnection();
-			if (ic != null) {
-				// When the text's first character is '.', remove the previous period
-				// if there is one.
-				CharSequence lastOne = ic.getTextBeforeCursor(1, 0);
-				if (lastOne.toString().equals("")) {
-					hideWindow();
-					handleClose();
-					ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+			mBackDownHandled = false;
+			// Only leave the screen when the field is really empty (nothing before/after the
+			// cursor and no selection), and only on a fresh press - never while the key is
+			// auto-repeating. Otherwise deleting a single character (or holding delete) in a
+			// text box, e.g. the "edit title" dialog, would also close the box.
+			if (ic != null && isFieldEmpty(ic)) {
+				if (event.getRepeatCount() != 0) {
+					// holding delete ran out of text: stay in the box, and keep swallowing the key-up
+					mBackDownHandled = true;
 					return true;
 				}
+				hideWindow();
+				handleClose();
+				ic.sendKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK));
+				return true;
 			}
+			// we are using this press as "delete": the matching key-up must not reach the app
+			mBackDownHandled = true;
 			onKey(KeyEvent.KEYCODE_DEL, null);
 			// remove vietnamese suggestion on delete
 			hasViAltSuggestion = false;
@@ -684,6 +695,18 @@ public class TraditionalT9 extends InputMethodService implements
 		return true;
 	}
 
+	private boolean mBackDownHandled = false;
+
+	// true only when there is really nothing to delete: no text before/after the cursor, no selection
+	private boolean isFieldEmpty(InputConnection ic) {
+		CharSequence before = ic.getTextBeforeCursor(1, 0);
+		CharSequence after = ic.getTextAfterCursor(1, 0);
+		CharSequence selected = ic.getSelectedText(0);
+		return before != null && before.length() == 0
+				&& after != null && after.length() == 0
+				&& (selected == null || selected.length() == 0);
+	}
+
 	protected void launchOptions() {
 		Intent awintent = new Intent(this, TraditionalT9Settings.class);
 		awintent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -724,10 +747,11 @@ public class TraditionalT9 extends InputMethodService implements
 			}
 			return true;
 		} else if (keyCode == KeyEvent.KEYCODE_STAR) {
-			// with "double press" mode on, long press is free for other uses
-			if (!InputPrefs.isStarDouble(this)) {
-				showSmileyPage();
-			}
+			// long press '*' = icons window (emoji). The symbols window (/ * . , ...) opens
+			// with a double press on '*' (or with the left soft key).
+			mStarHandler.removeCallbacks(mStarRunnable);
+			mStarPending = false;
+			showSmileyPage();
 
 		}	else if (keyCode == KeyEvent.KEYCODE_SOFT_RIGHT) {
 			if (interfacehandler != null) {
@@ -797,6 +821,12 @@ public class TraditionalT9 extends InputMethodService implements
 
 
 		if (keyCode == KeyEvent.KEYCODE_BACK) {
+			if (mBackDownHandled) {
+				// the down was used as a delete: swallow the up so the app does not
+				// treat it as "back" and close the dialog/screen
+				mBackDownHandled = false;
+				return true;
+			}
 			if (isInputViewShown()) {
 				//deleted by A.I.V
 				return true;
@@ -976,6 +1006,31 @@ public class TraditionalT9 extends InputMethodService implements
 		// Log.d("onKey", "END Cm: " + mCapsMode);
 	}
 
+	private static final char NBSP = ' ';
+	private boolean mMultiLine = false;
+	// time of the last space typed with the 0 key (used to turn a double press into a newline)
+	private long mZeroSpaceTime = 0;
+
+	/**
+	 * Android never wraps trailing spaces: a long run of regular spaces keeps growing past the
+	 * edge of the screen instead of moving to the next line. In multi-line fields, a space that
+	 * follows another space is therefore sent as a non-breaking space, which does wrap like a
+	 * long word. composingLen = length of composing text that is replaced by the commit.
+	 */
+	private CharSequence wrappableSpace(InputConnection ic, CharSequence s, int composingLen) {
+		if (!mMultiLine || ic == null || s == null || s.length() != 1 || s.charAt(0) != ' ') {
+			return s;
+		}
+		CharSequence before = ic.getTextBeforeCursor(composingLen + 1, 0);
+		if (before != null && before.length() > composingLen) {
+			char prev = before.charAt(before.length() - 1 - composingLen);
+			if (prev == ' ' || prev == NBSP) {
+				return String.valueOf(NBSP);
+			}
+		}
+		return s;
+	}
+
 	@Override
 	public void onText(CharSequence text) {
 		if (currentInputConnection == null)
@@ -984,6 +1039,7 @@ public class TraditionalT9 extends InputMethodService implements
 		if (mComposing.length() > 0 || mComposingI.length() > 0) {
 			commitTyped();
 		}
+		text = wrappableSpace(currentInputConnection, text, 0);
 		currentInputConnection.commitText(text, 1);
 		currentInputConnection.endBatchEdit();
 		updateShiftKeyState(getCurrentInputEditorInfo());
@@ -1152,6 +1208,7 @@ public class TraditionalT9 extends InputMethodService implements
 	}
 
 	public void handleBackspace() {
+		mZeroSpaceTime = 0;
 		final int length = mComposing.length();
 		final int length2 = mComposingI.length();
 		if (mKeyMode == MODE_TEXT) {
@@ -1216,7 +1273,7 @@ public class TraditionalT9 extends InputMethodService implements
 		if (mStarPending) {
 			mStarHandler.removeCallbacks(mStarRunnable);
 			mStarPending = false;
-			showSmileyPage();
+			showSymbolPage();
 		} else {
 			mStarPending = true;
 			mStarHandler.postDelayed(mStarRunnable, 350);
@@ -1255,8 +1312,28 @@ public class TraditionalT9 extends InputMethodService implements
 					if (mComposing.length() > 0) {
 						commitTyped();
 					}
+					if (keyCode == KeyEvent.KEYCODE_0) {
+						// double press on 0 = new line (replaces the space typed by the first press)
+						long now = SystemClock.uptimeMillis();
+						if (mZeroSpaceTime != 0 && now - mZeroSpaceTime <= T9DELAY
+								&& currentInputConnection != null) {
+							mZeroSpaceTime = 0;
+							CharSequence prev = currentInputConnection.getTextBeforeCursor(1, 0);
+							currentInputConnection.beginBatchEdit();
+							if (prev != null && prev.length() == 1
+									&& (prev.charAt(0) == ' ' || prev.charAt(0) == NBSP)) {
+								currentInputConnection.deleteSurroundingText(1, 0);
+							}
+							currentInputConnection.commitText("\n", 1);
+							currentInputConnection.endBatchEdit();
+							updateShiftKeyState(getCurrentInputEditorInfo());
+							break;
+						}
+						mZeroSpaceTime = now;
+					}
 					onText(" ");
 				} else {
+					mZeroSpaceTime = 0;
 					// do things
 					if (interfacehandler != null) {
 						interfacehandler.midButtonUpdate(true);
@@ -1606,7 +1683,7 @@ public class TraditionalT9 extends InputMethodService implements
 					// this is the "Add" item, never type its label
 					ic.finishComposingText();
 				} else if (sel >= 0 && sel < mSuggestionStrings.size()) {
-					ic.commitText(mSuggestionStrings.get(sel), 1);
+					ic.commitText(wrappableSpace(ic, mSuggestionStrings.get(sel), mComposing.length()), 1);
 					if (mKeyMode == MODE_LANG && sel < mSuggestionInts.size()) {
 						// update freq
 						db.incrementWord(mSuggestionInts.get(sel));
