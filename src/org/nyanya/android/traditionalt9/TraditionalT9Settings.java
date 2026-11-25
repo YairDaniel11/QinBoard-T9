@@ -327,7 +327,7 @@ public class TraditionalT9Settings extends ListActivity implements
 								reply = processFile(dictstream, reply, db, mSupportedLanguages[x], dicts[x]);
 							} catch (FileNotFoundException e) {
 								reply.status = false;
-								reply.forceMsg("File not found: " + e.getMessage());
+								reply.forceMsg(mContext.getString(R.string.pref_loaduser_notfound, dicts[x]));
 								final String msg = mContext.getString(R.string.pref_loaduser_notfound, dicts[x]);
 								//Log.d("T9Setting.load", "Built string. Calling Toast.");
 								((Activity) mContext).runOnUiThread(new Runnable() {

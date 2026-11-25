@@ -2,9 +2,15 @@ package org.nyanya.android.traditionalt9;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.os.Build;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -27,7 +33,7 @@ public class SymbolDialog extends AbsSymDialog {
 		"∞", "√", "π", "µ", "‰", "§", "©", "®", "™", "¶",
 		"•", "…", "–", "—", "«", "»", "‹", "›", "“", "”",
 		"‘", "’", "„", "‚", "¡", "¿", "←", "→", "↑", "↓",
-		"↔", "†", "‡", "¦", "¬", "✓", "✗", "★", "☆", "♥",
+		"↔", "¦", "¬", "✓", "✗", "★", "☆", "♥",
 		"♪", "●", "○", "■", "□", "▲", "▼", "◀", "▶", "№"
 	};
 
@@ -60,7 +66,7 @@ public class SymbolDialog extends AbsSymDialog {
 		"🍺", "🍻", "🍾", "🍹", "🍼", "🍚", "🍝", "🍗", "🍳", "🍯",
 		// places, travel, objects
 		"⚽", "🏀", "🏆", "🚗", "🚌", "🚕", "✈️", "🚂", "🚲", "🏠",
-		"🏥", "🏫", "⛪", "🕓", "⏰", "⌛", "📞", "📱", "📵", "💻",
+		"🏫", "🕓", "⏰", "⌛", "📞", "📱", "📵", "💻",
 		"📖", "📚", "✉️", "📧", "💰", "💳", "📋", "📎", "✏️", "🔍",
 		"🌎", "📷", "🎤", "🎧", "📺", "🔋", "🔧", "💊", "💉", "🎓"
 	};
@@ -68,6 +74,48 @@ public class SymbolDialog extends AbsSymDialog {
 	private static final String PREFS = "qb_symbol_usage";
 
 	private boolean icons = false;
+	private String[] supportedIcons = null;
+
+	// drop duplicates and icons this device cannot draw (they show up as empty buttons)
+	private static String[] filterSupported(String[] base) {
+		Paint paint = new Paint();
+		paint.setTextSize(30);
+		List<String> out = new ArrayList<String>();
+		for (String s : new LinkedHashSet<String>(Arrays.asList(base))) {
+			if (drawable(paint, s)) {
+				out.add(s);
+			}
+		}
+		return out.toArray(new String[out.size()]);
+	}
+
+	private static boolean drawable(Paint paint, String s) {
+		try {
+			if (Build.VERSION.SDK_INT >= 23) {
+				return paint.hasGlyph(s);
+			}
+			// old Android: compare with how a missing character is drawn
+			return paint.measureText(s) > 0 && !sameBitmap(paint, s, "￿")
+					&& !sameBitmap(paint, s, "󟿽");
+		} catch (RuntimeException e) {
+			return true;
+		}
+	}
+
+	private static boolean sameBitmap(Paint paint, String a, String b) {
+		Bitmap ba = render(paint, a);
+		Bitmap bb = render(paint, b);
+		boolean same = ba.sameAs(bb);
+		ba.recycle();
+		bb.recycle();
+		return same;
+	}
+
+	private static Bitmap render(Paint paint, String s) {
+		Bitmap bm = Bitmap.createBitmap(64, 48, Bitmap.Config.ARGB_8888);
+		new Canvas(bm).drawText(s, 2, 36, paint);
+		return bm;
+	}
 	private String[] orderedSymbols = SYMBOLS;
 	private String[] orderedIcons = ICONS;
 
@@ -79,7 +127,10 @@ public class SymbolDialog extends AbsSymDialog {
 	protected void showScreen(View anchor, boolean showIcons) {
 		icons = showIcons;
 		orderedSymbols = orderByUsage(SYMBOLS, "s:");
-		orderedIcons = orderByUsage(ICONS, "i:");
+		if (supportedIcons == null) {
+			supportedIcons = filterSupported(ICONS);
+		}
+		orderedIcons = orderByUsage(supportedIcons, "i:");
 		resetPage();
 		doShow(anchor);
 	}

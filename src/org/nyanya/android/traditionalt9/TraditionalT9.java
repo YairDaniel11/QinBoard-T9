@@ -13,6 +13,8 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.CompletionInfo;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.ExtractedText;
+import android.view.inputmethod.ExtractedTextRequest;
 import android.view.inputmethod.InputConnection;
 import android.widget.Toast;
 
@@ -504,6 +506,12 @@ public class TraditionalT9 extends InputMethodService implements
 								  int candidatesStart, int candidatesEnd) {
 		super.onUpdateSelection(oldSelStart, oldSelEnd, newSelStart, newSelEnd, candidatesStart,
 				candidatesEnd);
+		// the app (or the system) may mark the word under the cursor as "composing" (highlighted);
+		// we are not composing anything, so release it: delete/typing then act on the cursor only
+		if (mComposing.length() == 0 && mComposingI.length() == 0 && candidatesStart >= 0
+				&& candidatesStart != candidatesEnd && currentInputConnection != null) {
+			currentInputConnection.finishComposingText();
+		}
 		if (mKeyMode == MODE_TEXT) { return; } // stops the ghost fast-type commit
 		// If the current selection in the text view changes, we should
 		// clear whatever candidate text we have.
@@ -543,6 +551,14 @@ public class TraditionalT9 extends InputMethodService implements
 		//		Log.d("onKeyDown", "Key: " + event + " repeat?: " +
 //				event.getRepeatCount() + " long-time: " + event.isLongPress());
 		if (mEditing == NON_EDIT) {
+			// phone / dialer fields: long press on 0 types "+"
+			if (keyCode == KeyEvent.KEYCODE_0 && getCurrentInputConnection() != null) {
+				if (event.getRepeatCount() == 0) {
+					mZeroPlusDone = false;
+					event.startTracking();
+				}
+				return true;
+			}
 			// // catch for UI weirdness on up event thing
 			return false;
 		}
@@ -696,6 +712,7 @@ public class TraditionalT9 extends InputMethodService implements
 	}
 
 	private boolean mBackDownHandled = false;
+	private boolean mZeroPlusDone = false;
 
 	// true only when there is really nothing to delete: no text before/after the cursor, no selection
 	private boolean isFieldEmpty(InputConnection ic) {
@@ -719,6 +736,14 @@ public class TraditionalT9 extends InputMethodService implements
 	}
 	@Override
 	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
+		if (mEditing == NON_EDIT && keyCode == KeyEvent.KEYCODE_0) {
+			InputConnection nic = getCurrentInputConnection();
+			if (nic != null && !mZeroPlusDone) {
+				mZeroPlusDone = true;
+				nic.commitText("+", 1);
+			}
+			return true;
+		}
 		// consume since we will assume we have already handled the long press
 		// if greater than 1
 		if (event.getRepeatCount() != 1) {
@@ -751,7 +776,10 @@ public class TraditionalT9 extends InputMethodService implements
 			// with a double press on '*' (or with the left soft key).
 			mStarHandler.removeCallbacks(mStarRunnable);
 			mStarPending = false;
-			showSmileyPage();
+			// in "double press" mode the long press is disabled
+			if (!InputPrefs.isStarDouble(this)) {
+				showSmileyPage();
+			}
 
 		}	else if (keyCode == KeyEvent.KEYCODE_SOFT_RIGHT) {
 			if (interfacehandler != null) {
@@ -781,6 +809,13 @@ public class TraditionalT9 extends InputMethodService implements
 		//		Log.d("onKeyUp", "Key: " + keyCode + " repeat?: " +
 		//			event.getRepeatCount());
 		if (mEditing == NON_EDIT) {
+			if (keyCode == KeyEvent.KEYCODE_0 && getCurrentInputConnection() != null) {
+				if (!mZeroPlusDone && !event.isCanceled()) {
+					getCurrentInputConnection().commitText("0", 1);
+				}
+				mZeroPlusDone = false;
+				return true;
+			}
 			// if (mButtonClose) {
 			// //handle UI weirdness on up event
 			// mButtonClose = false;
@@ -1101,15 +1136,14 @@ public class TraditionalT9 extends InputMethodService implements
 					String prefix = "";
 					if (mPreviousWord.length() == 0) {
 						if (suggestions && !backspace) {
-							prefix = mPreviousWord = mSuggestionStrings.get(mCandidateView.mSelectedIndex);
+							prefix = mPreviousWord = mSuggestionStrings.get(safeSelected());
 						}
 					} else {
 						if (backspace) {
 							prefix = mPreviousWord;
 						} else {
 							if (suggestions) {
-								if (mCandidateView.mSelectedIndex == -1) { mCandidateView.mSelectedIndex = 0; }
-								prefix = mPreviousWord = mSuggestionStrings.get(mCandidateView.mSelectedIndex);
+								prefix = mPreviousWord = mSuggestionStrings.get(safeSelected());
 							} else {
 								prefix = mPreviousWord;
 							}
@@ -1198,6 +1232,15 @@ public class TraditionalT9 extends InputMethodService implements
 		}
 	}
 
+	// selected candidate index, always valid for mSuggestionStrings (which must be non-empty)
+	private int safeSelected() {
+		int i = mCandidateView == null ? 0 : mCandidateView.mSelectedIndex;
+		if (i < 0 || i >= mSuggestionStrings.size()) {
+			i = 0;
+		}
+		return i;
+	}
+
 	private void setSuggestions(List<String> suggestions, int initialSel) {
 		if (suggestions != null && suggestions.size() > 0) {
 			setCandidatesViewShown(true);
@@ -1223,7 +1266,9 @@ public class TraditionalT9 extends InputMethodService implements
 		if (length2 > 1) {
 			if (mComposingI.charAt(length2 - 1) == '1') {
 				// revert previous word
-				mPreviousWord = mPreviousWord.substring(0, mPreviousWord.length() - 1);
+				if (mPreviousWord.length() > 0) {
+					mPreviousWord = mPreviousWord.substring(0, mPreviousWord.length() - 1);
+				}
 			}
 			mComposingI.delete(length2 - 1, length2);
 			if (length2 - 1 > 1) {
@@ -1502,6 +1547,13 @@ public class TraditionalT9 extends InputMethodService implements
 				if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
 					if (!mAddingWord && mComposing.length() == 0 && mComposingI.length() == 0
 							&& mDPADkeyEvent != null && currentInputConnection != null) {
+						// double press on OK with the cursor inside a word: select the whole word
+						long now = android.os.SystemClock.uptimeMillis();
+						boolean dbl = now - mLastOkUp < 450;
+						mLastOkUp = dbl ? 0 : now;
+						if (dbl && selectWordAtCursor(currentInputConnection)) {
+							return true;
+						}
 						// nothing typed: let the app handle OK (e.g. to switch navigation modes)
 						currentInputConnection.sendKeyEvent(mDPADkeyEvent);
 						return super.onKeyUp(keyCode, event);
@@ -1515,6 +1567,39 @@ public class TraditionalT9 extends InputMethodService implements
 				}
 			}
 		}
+	}
+
+	private long mLastOkUp = 0;
+
+	// selects the word around the cursor (only when the cursor is strictly inside a word and
+	// nothing is selected yet). Delete then removes it, typing replaces it, arrows cancel it.
+	private boolean selectWordAtCursor(InputConnection ic) {
+		CharSequence sel = ic.getSelectedText(0);
+		if (sel != null && sel.length() > 0) {
+			return false;
+		}
+		CharSequence before = ic.getTextBeforeCursor(64, 0);
+		CharSequence after = ic.getTextAfterCursor(64, 0);
+		if (before == null || after == null || before.length() == 0 || after.length() == 0
+				|| !Character.isLetterOrDigit(before.charAt(before.length() - 1))
+				|| !Character.isLetterOrDigit(after.charAt(0))) {
+			return false;
+		}
+		int b = 0;
+		while (b < before.length() && Character.isLetterOrDigit(before.charAt(before.length() - 1 - b))) {
+			b++;
+		}
+		int a = 0;
+		while (a < after.length() && Character.isLetterOrDigit(after.charAt(a))) {
+			a++;
+		}
+		ExtractedText et = ic.getExtractedText(new ExtractedTextRequest(), 0);
+		if (et == null) {
+			return false;
+		}
+		int cursor = et.selectionStart + et.startOffset;
+		ic.setSelection(cursor - b, cursor + a);
+		return true;
 	}
 
 	private void commitReset() {

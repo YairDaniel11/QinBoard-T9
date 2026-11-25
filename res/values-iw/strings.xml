@@ -42,8 +42,8 @@
 	<string name="pref_loaddict">טעינת מילון</string>
 	<string name="pref_loaduserdict">טעינת מילון משתמש</string>
     <string name="pref_nukedict">מחיקת מילון</string>
-	<string name="pref_backupdict">גיבוי מילון</string>
-	<string name="pref_restoredict">שיחזור מילון</string>
+	<string name="pref_backupdict">גיבוי מילון לקובץ</string>
+	<string name="pref_restoredict">שחזור מילון מקובץ</string>
 	<string name="pref_querytest">Query test</string>
 	<string name="pref_testfunc">Test func</string>
 
@@ -53,7 +53,7 @@
 	<string name="pref_loadingdict">טוען מילון...</string>
 	<string name="pref_candidate_theme">ערכת נושא להצעות</string>
 	<string name="pref_candidate_font">גודל פונט ההצעות</string>
-	<string name="pref_star_mode">כוכבית - פתיחת סימנים מיוחדים</string>
+	<string name="pref_star_mode">מקש כוכבית</string>
 	<string-array name="pref_star_mode_entries">
 		<item>לחיצה ארוכה (ברירת מחדל)</item>
 		<item>לחיצה כפולה (מבטלת ארוכה)</item>
@@ -77,7 +77,7 @@
 	<string name="pref_loadingbackup">משחזר מילון...</string>
 	<string name="pref_savingbackup">מגבה מילון...</string>
 	<string name="pref_nukingdict">מוחק מילון... אנא המתן...</string>
-	<string name="pref_loaduser_notfound">מילון עבור %1$s לא נמצא. לא נטען.</string>
+	<string name="pref_loaduser_notfound">אין קובץ מילון משתמש (%1$s) בתיקיית QinBoardT9. צרו אותו קודם באמצעות "גיבוי מילון לקובץ".</string>
 
 	<string name="pref_backup_warn">אזהרה: קיים גיבוי מסד נתונים קיים. האם ברצונך להחליף?</string>
 	<string name="pref_backup_title">גיבוי מסד נתוני IME</string>

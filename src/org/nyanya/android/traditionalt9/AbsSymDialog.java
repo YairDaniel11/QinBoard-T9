@@ -173,6 +173,35 @@ public abstract class AbsSymDialog extends Dialog implements
 		}
 	}
 
+	// some keypads report '#' / '*' only through the typed character; normalise them
+	private static int normalizeKey(KeyEvent event) {
+		int keyCode = event.getKeyCode();
+		if (keyCode == KeyEvent.KEYCODE_POUND || keyCode == KeyEvent.KEYCODE_STAR
+				|| (keyCode >= KeyEvent.KEYCODE_0 && keyCode <= KeyEvent.KEYCODE_9)) {
+			return keyCode;
+		}
+		int ch = event.getUnicodeChar();
+		if (ch == '#') {
+			return KeyEvent.KEYCODE_POUND;
+		}
+		if (ch == '*') {
+			return KeyEvent.KEYCODE_STAR;
+		}
+		return keyCode;
+	}
+
+	@Override
+	public boolean dispatchKeyEvent(KeyEvent event) {
+		int norm = normalizeKey(event);
+		if (norm != event.getKeyCode()) {
+			KeyEvent e = new KeyEvent(event.getDownTime(), event.getEventTime(), event.getAction(),
+					norm, event.getRepeatCount(), event.getMetaState(), event.getDeviceId(),
+					event.getScanCode(), event.getFlags());
+			return event.getAction() == KeyEvent.ACTION_DOWN ? onKeyDown(norm, e) : onKeyUp(norm, e);
+		}
+		return super.dispatchKeyEvent(event);
+	}
+
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		if (event.getRepeatCount() != 0) {

@@ -54,7 +54,7 @@
     <string name="pref_loadingdict">Loading dictionary…</string>
     <string name="pref_candidate_theme">Suggestions theme</string>
     <string name="pref_candidate_font">Suggestions font size</string>
-    <string name="pref_star_mode">Star key - special characters</string>
+    <string name="pref_star_mode">Star key</string>
     <string-array name="pref_star_mode_entries">
     	<item>Long press (default)</item>
     	<item>Double press (disables long press)</item>
